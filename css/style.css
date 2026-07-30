@@ -1110,6 +1110,113 @@ a:hover {
   color: var(--accent);
 }
 
+/* ===== 视频课程:5大类Tab + 学科Tab 两层结构 ===== */
+/* 第一层:大类Tab栏 */
+.category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 20px;
+  background: var(--bg-white);
+  padding: 12px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 70px;
+  z-index: 60;
+}
+.category-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 2px solid var(--border);
+  background: var(--bg-light);
+  color: var(--text-dark);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.category-tab:hover:not(.active) {
+  background: #eaf2f8;
+  border-color: var(--primary-light);
+  transform: translateY(-1px);
+}
+.category-tab.active {
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+}
+.category-tab i {
+  font-size: 15px;
+}
+.category-tab-name {
+  letter-spacing: 0.5px;
+}
+.category-tab-count {
+  background: rgba(255, 255, 255, 0.28);
+  color: inherit;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 700;
+  font-family: Consolas, monospace;
+}
+.category-tab:not(.active) .category-tab-count {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* 大类信息条(描述+主讲老师) */
+.category-info-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+  padding: 16px 22px;
+  background: var(--bg-white);
+  border-radius: var(--radius);
+  margin-bottom: 20px;
+  box-shadow: var(--shadow);
+}
+.category-info-text {
+  flex: 1;
+  min-width: 240px;
+}
+.category-info-text h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.category-info-text h2 i {
+  font-size: 22px;
+}
+.category-info-text p {
+  margin: 0;
+  color: var(--text-gray);
+  font-size: 13px;
+  line-height: 1.6;
+}
+.category-info-teacher {
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: #fff;
+  padding: 8px 16px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 /* ===== 视频学科分组(393讲全量) ===== */
 .subject-overview {
   display: flex;
@@ -1142,7 +1249,7 @@ a:hover {
   font-weight: 500;
 }
 
-/* 学科Tab栏 */
+/* 学科Tab栏(第二层) */
 .subject-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -1152,9 +1259,6 @@ a:hover {
   padding: 10px;
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  position: sticky;
-  top: 70px;
-  z-index: 50;
 }
 .subject-tab {
   display: inline-flex;
@@ -1421,8 +1525,26 @@ a:hover {
   .stat-big-num {
     font-size: 30px;
   }
-  .subject-tabs {
+  .category-tabs {
     position: static;
+    padding: 8px;
+    gap: 6px;
+  }
+  .category-tab {
+    padding: 7px 12px;
+    font-size: 12px;
+    gap: 5px;
+  }
+  .category-tab i {
+    font-size: 13px;
+  }
+  .category-info-bar {
+    padding: 12px 14px;
+  }
+  .category-info-text h2 {
+    font-size: 17px;
+  }
+  .subject-tabs {
     padding: 8px;
     gap: 6px;
   }

@@ -551,63 +551,13 @@ const VIDEOS = {
   }
 };
 
-// ========== 按学科分组的全量视频(共393讲) ==========
-// 每个学科下的 cards: {title, page, bv, teacher, desc?}
-const SUBJECT_VIDEOS = {
-  // 方向公用学科
-  common: [
-    { key: 'math', name: '高等数学', icon: 'fas fa-square-root-alt', color: '#e74c3c' },
-    { key: 'linear', name: '线性代数', icon: 'fas fa-th', color: '#9b59b6' },
-    { key: 'probability', name: '概率统计', icon: 'fas fa-dice', color: '#8e44ad' },
-    { key: 'physics', name: '普通物理', icon: 'fas fa-atom', color: '#3498db' },
-    { key: 'chemistry', name: '普通化学', icon: 'fas fa-flask', color: '#1abc9c' },
-    { key: 'mech', name: '理论/材料/流体力学', icon: 'fas fa-cogs', color: '#f39c12' },
-    { key: 'econ', name: '工程经济', icon: 'fas fa-coins', color: '#27ae60' },
-    { key: 'signal', name: '信号与信息基础', icon: 'fas fa-wave-square', color: '#16a085' },
-    { key: 'computer', name: '计算机应用基础', icon: 'fas fa-laptop-code', color: '#2c3e50' }
-  ],
-  // 电类通用学科
-  electro: [
-    { key: 'circuit', name: '电路理论', icon: 'fas fa-project-diagram', color: '#2980b9' },
-    { key: 'emf', name: '电磁场', icon: 'fas fa-magnet', color: '#8e44ad' },
-    { key: 'analog', name: '模拟电子技术', icon: 'fas fa-microchip', color: '#d35400' },
-    { key: 'digital', name: '数字电子技术', icon: 'fas fa-code-branch', color: '#27ae60' },
-    { key: 'motor', name: '电机与变压器', icon: 'fas fa-cog', color: '#c0392b' }
-  ],
-  // 专业基础(分方向)
-  pd: [
-    { key: 'power-pd', name: '电气/电力系统基础', icon: 'fas fa-bolt', color: '#34495e' },
-    { key: 'short', name: '短路电流计算', icon: 'fas fa-exclamation-triangle', color: '#e67e22' },
-    { key: 'load', name: '负荷计算', icon: 'fas fa-tachometer-alt', color: '#2980b9' },
-    { key: 'safety', name: '电气安全/低压电器', icon: 'fas fa-shield-alt', color: '#c0392b' },
-    { key: 'light', name: '照明/布线/智能化', icon: 'fas fa-lightbulb', color: '#f1c40f' },
-    { key: 'grounding', name: '防雷过电压/接地', icon: 'fas fa-cloud-bolt', color: '#8e44ad' }
-  ],
-  pt: [
-    { key: 'power-pt', name: '电气/电力系统基础(潮流/稳定)', icon: 'fas fa-bolt', color: '#34495e' },
-    { key: 'short', name: '短路电流计算', icon: 'fas fa-exclamation-triangle', color: '#e67e22' },
-    { key: 'hv', name: '高压电器/高电压技术', icon: 'fas fa-tower-broadcast', color: '#2980b9' },
-    { key: 'insulation', name: '绝缘配合/过电压/防雷接地', icon: 'fas fa-cloud-bolt', color: '#8e44ad' },
-    { key: 'relay', name: '电力系统继电保护', icon: 'fas fa-shield-halved', color: '#c0392b' }
-  ],
-  // 冲刺串讲+真题(公共)
-  review: [
-    { key: 'sprint', name: '考前冲刺串讲', icon: 'fas fa-rocket', color: '#e74c3c' },
-    { key: 'zhenti-public', name: '公共基础真题(上午卷120题)', icon: 'fas fa-file-alt', color: '#16a085' }
-  ],
-  zhentiPd: [
-    { key: 'zhenti-pd', name: '供配电专业基础真题(下午卷60题)', icon: 'fas fa-file-alt', color: '#2980b9' }
-  ],
-  zhentiPt: [
-    { key: 'zhenti-pt', name: '发输变电专业基础真题', icon: 'fas fa-file-alt', color: '#8e44ad' }
-  ]
-};
-
-// 生成学科卡片的辅助函数:把一个系列的playlist条目转成cards格式
-function makeCards(playlistItems, defaultBv, teacher, prefixDesc) {
+// ========== 5大课程分类 + 学科分组(共393讲全量) ==========
+// 结构: COURSE_CATEGORIES(大类元数据) → COURSE_CARDS(方向→大类→学科→cards)
+// 生成学科卡片的辅助函数
+function makeCards(playlistItems, defaultBv, teacher) {
   return playlistItems.map(function (x) {
     return {
-      title: (prefixDesc ? prefixDesc + '·' : '') + x.t,
+      title: x.t,
       page: x.p || 1,
       bv: x.bv || defaultBv,
       teacher: teacher,
@@ -616,291 +566,260 @@ function makeCards(playlistItems, defaultBv, teacher, prefixDesc) {
   });
 }
 
-// 各方向学科卡片区(方向->学科key->cards数组)
-// 供配电方向 SUBJECT_CARDS.powerDistribution.{math,circuit,...} = [{title,page,bv,teacher}, ...]
-const SUBJECT_CARDS = {};
+// 5大课程分类(每个大类含 subjects 学科列表)
+const COURSE_CATEGORIES = [
+  {
+    key: 'jiangxiaobai', name: '公共基础精讲班', teacher: '姜小白',
+    icon: 'fas fa-chalkboard-teacher', color: '#e74c3c',
+    desc: '姜小白老师系统讲解公共基础52讲,覆盖高数/线代/概率/物理/化学/力学/工程经济/信号/电磁场/电路/电机/模电/数电。',
+    subjects: [
+      { key: 'math', name: '高等数学', icon: 'fas fa-square-root-alt', color: '#e74c3c' },
+      { key: 'linear', name: '线性代数', icon: 'fas fa-th', color: '#9b59b6' },
+      { key: 'probability', name: '概率统计', icon: 'fas fa-dice', color: '#8e44ad' },
+      { key: 'physics', name: '普通物理', icon: 'fas fa-atom', color: '#3498db' },
+      { key: 'chemistry', name: '普通化学', icon: 'fas fa-flask', color: '#1abc9c' },
+      { key: 'mech', name: '理论力学', icon: 'fas fa-cogs', color: '#f39c12' },
+      { key: 'econ', name: '工程经济', icon: 'fas fa-coins', color: '#27ae60' },
+      { key: 'signal', name: '信号与信息基础', icon: 'fas fa-wave-square', color: '#16a085' },
+      { key: 'emf', name: '电磁场', icon: 'fas fa-magnet', color: '#8e44ad' },
+      { key: 'circuit', name: '电路基础', icon: 'fas fa-project-diagram', color: '#2980b9' },
+      { key: 'motor', name: '电机与变压器', icon: 'fas fa-cog', color: '#c0392b' },
+      { key: 'analog', name: '模拟电子技术', icon: 'fas fa-microchip', color: '#d35400' },
+      { key: 'digital', name: '数字电子技术', icon: 'fas fa-code-branch', color: '#27ae60' }
+    ]
+  },
+  {
+    key: 'gongkongquan', name: '专业基础精讲班', teacher: '工控圈',
+    icon: 'fas fa-brain', color: '#2980b9',
+    desc: '工控圈专业基础精讲200+讲,覆盖电路/电磁场/模电/数电/电机/电力系统/短路/负荷/安全/照明/防雷接地等。',
+    subjects: [] // 动态填充(分方向)
+  },
+  {
+    key: 'dianjiaozhongxin', name: '电教中心', teacher: '电教中心名师团队',
+    icon: 'fas fa-graduation-cap', color: '#27ae60',
+    desc: '电教中心注册电气工程师基础考试系统课程,全19讲,大纲全覆盖。',
+    subjects: [
+      { key: 'intro', name: '考试介绍', icon: 'fas fa-info-circle', color: '#2c3e50' },
+      { key: 'math', name: '高等数学', icon: 'fas fa-square-root-alt', color: '#e74c3c' },
+      { key: 'linear', name: '线性代数', icon: 'fas fa-th', color: '#9b59b6' },
+      { key: 'probability', name: '概率统计', icon: 'fas fa-dice', color: '#8e44ad' },
+      { key: 'physics', name: '物理', icon: 'fas fa-atom', color: '#3498db' },
+      { key: 'chemistry', name: '化学', icon: 'fas fa-flask', color: '#1abc9c' },
+      { key: 'mech', name: '理论力学', icon: 'fas fa-cogs', color: '#f39c12' },
+      { key: 'matmech', name: '材料力学', icon: 'fas fa-hammer', color: '#e67e22' },
+      { key: 'fluid', name: '流体力学', icon: 'fas fa-water', color: '#00a8cc' },
+      { key: 'electro', name: '电工电子技术', icon: 'fas fa-bolt', color: '#f39c12' },
+      { key: 'signal', name: '信号与信息', icon: 'fas fa-wave-square', color: '#16a085' },
+      { key: 'computer', name: '计算机应用', icon: 'fas fa-laptop-code', color: '#2c3e50' },
+      { key: 'econ', name: '工程经济', icon: 'fas fa-coins', color: '#27ae60' },
+      { key: 'analog', name: '模拟电子', icon: 'fas fa-microchip', color: '#d35400' },
+      { key: 'digital', name: '数字电子', icon: 'fas fa-code-branch', color: '#27ae60' },
+      { key: 'circuit', name: '电路', icon: 'fas fa-project-diagram', color: '#2980b9' },
+      { key: 'emf', name: '电磁场', icon: 'fas fa-magnet', color: '#8e44ad' },
+      { key: 'motor', name: '电机与变压器', icon: 'fas fa-cog', color: '#c0392b' },
+      { key: 'power', name: '电气工程基础', icon: 'fas fa-bolt', color: '#34495e' }
+    ]
+  },
+  {
+    key: 'daxiong', name: '冲刺课', teacher: '大熊',
+    icon: 'fas fa-rocket', color: '#e74c3c',
+    desc: '大熊老师专业基础考试冲刺系列公开课,共6讲,考前最后阶段快速过核心考点。',
+    subjects: [
+      { key: 'sprint', name: '冲刺串讲', icon: 'fas fa-rocket', color: '#e74c3c' }
+    ]
+  },
+  {
+    key: 'zhenti', name: '真题讲解', teacher: '名师团队',
+    icon: 'fas fa-file-alt', color: '#16a085',
+    desc: '2025年真题一题一视频对答案解析版:公共基础(BV1Ks)+供配电专业(BV1Ck)+发输变电专业(BV1uu)。',
+    subjects: [] // 动态填充(分方向)
+  }
+];
+
+// 工控圈专业基础精讲班 - 学科定义(分方向)
+var GKQ_SUBJECTS_PD = [
+  { key: 'circuit', name: '电路理论', icon: 'fas fa-project-diagram', color: '#2980b9' },
+  { key: 'emf', name: '电磁场', icon: 'fas fa-magnet', color: '#8e44ad' },
+  { key: 'analog', name: '模拟电子技术', icon: 'fas fa-microchip', color: '#d35400' },
+  { key: 'digital', name: '数字电子技术', icon: 'fas fa-code-branch', color: '#27ae60' },
+  { key: 'motor', name: '电机与变压器', icon: 'fas fa-cog', color: '#c0392b' },
+  { key: 'power', name: '电气/电力系统基础', icon: 'fas fa-bolt', color: '#34495e' },
+  { key: 'short', name: '短路电流计算', icon: 'fas fa-exclamation-triangle', color: '#e67e22' },
+  { key: 'load', name: '负荷计算', icon: 'fas fa-tachometer-alt', color: '#2980b9' },
+  { key: 'safety', name: '电气安全/低压电器', icon: 'fas fa-shield-alt', color: '#c0392b' },
+  { key: 'light', name: '照明/布线/智能化', icon: 'fas fa-lightbulb', color: '#f1c40f' },
+  { key: 'grounding', name: '防雷过电压/接地', icon: 'fas fa-cloud-bolt', color: '#8e44ad' },
+  { key: 'extra', name: '综合补充精讲', icon: 'fas fa-layer-group', color: '#2c3e50' }
+];
+var GKQ_SUBJECTS_PT = [
+  { key: 'circuit', name: '电路理论', icon: 'fas fa-project-diagram', color: '#2980b9' },
+  { key: 'emf', name: '电磁场', icon: 'fas fa-magnet', color: '#8e44ad' },
+  { key: 'analog', name: '模拟电子技术', icon: 'fas fa-microchip', color: '#d35400' },
+  { key: 'digital', name: '数字电子技术', icon: 'fas fa-code-branch', color: '#27ae60' },
+  { key: 'motor', name: '电机与变压器', icon: 'fas fa-cog', color: '#c0392b' },
+  { key: 'power', name: '电力系统(潮流/稳定)', icon: 'fas fa-bolt', color: '#34495e' },
+  { key: 'short', name: '短路电流计算', icon: 'fas fa-exclamation-triangle', color: '#e67e22' },
+  { key: 'hv', name: '高压电器/高电压技术', icon: 'fas fa-tower-broadcast', color: '#2980b9' },
+  { key: 'insulation', name: '绝缘配合/过电压/防雷接地', icon: 'fas fa-cloud-bolt', color: '#8e44ad' },
+  { key: 'relay', name: '电力系统继电保护', icon: 'fas fa-shield-halved', color: '#c0392b' },
+  { key: 'extra', name: '综合补充精讲', icon: 'fas fa-layer-group', color: '#2c3e50' }
+];
+
+// 真题讲解 - 学科定义(分方向)
+var ZHENTI_SUBJECTS_PD = [
+  { key: 'public', name: '公共基础真题(上午卷120题)', icon: 'fas fa-file-alt', color: '#16a085' },
+  { key: 'professional', name: '供配电专业基础真题(下午卷60题)', icon: 'fas fa-file-alt', color: '#2980b9' }
+];
+var ZHENTI_SUBJECTS_PT = [
+  { key: 'public', name: '公共基础真题(上午卷120题)', icon: 'fas fa-file-alt', color: '#16a085' },
+  { key: 'professional', name: '发输变电专业基础真题', icon: 'fas fa-file-alt', color: '#8e44ad' }
+];
+
+// 课程卡片区: 方向→大类key→学科key→cards数组
+const COURSE_CARDS = {};
 
 // ========== 供配电方向 ==========
 (function buildPd() {
-  var pd = VIDEOS.powerDistribution;
+  var V = VIDEOS.powerDistribution;
   var D = {};
 
-  // 1. 高等数学 (姜小白数学p1-12 + 电教p2)
-  D.math = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^数学[1-9]|^数学1[0-2]/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白·公共基础精讲'),
-    makeCards([{ t: '电教第01讲-高等数学', p: 2 }], pd.dianjiaozhongxin.bvid, '电教中心全18讲')
-  );
-  // 2. 线性代数 (姜小白线代p13-15 + 电教p3)
-  D.linear = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^数学1[3-5]/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白'),
-    makeCards([{ t: '电教第02讲-线性代数', p: 3 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 3. 概率统计 (姜小白概率p16-18 + 电教p4)
-  D.probability = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^数学1[6-8]/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白'),
-    makeCards([{ t: '电教第03讲-概率统计', p: 4 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 4. 物理 (姜小白物理p19-23 + 电教p5)
-  D.physics = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^物理/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白'),
-    makeCards([{ t: '电教第04讲-物理', p: 5 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 5. 化学 (姜小白化学p24-30 + 电教p6)
-  D.chemistry = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^化学/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白'),
-    makeCards([{ t: '电教第05讲-化学', p: 6 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 6. 力学 (姜小白理论力学p48-52 + 电教p7/8/9 理论/材料/流体)
-  D.mech = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^理论力学/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白·理论力学'),
-    makeCards([
-      { t: '电教第06讲-理论力学', p: 7 },
-      { t: '电教第07讲-材料力学', p: 8 },
-      { t: '电教第08讲-流体力学', p: 9 }
-    ], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 7. 工程经济 (姜小白p31-33 + 电教p13)
-  D.econ = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^工程经济/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白'),
-    makeCards([{ t: '电教第12讲-工程经济', p: 13 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 8. 信号 (姜小白p34-36 + 电教p11)
-  D.signal = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^信号/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白'),
-    makeCards([{ t: '电教第10讲-信号与信息', p: 11 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 9. 计算机应用基础 (电教p12)
-  D.computer = [].concat(
-    makeCards([{ t: '电教第11讲-计算机应用基础', p: 12 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 10. 电路理论 (姜小白电路p38-41 + 工控圈电路p1-10 + 电教p16)
-  D.circuit = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^电工[2-5]/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白·电路基础'),
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^电路/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈·专业精讲'),
-    makeCards([{ t: '电教第15讲-电路', p: 16 }], pd.dianjiaozhongxin.bvid, '电教中心'),
-    // 工控圈补充 电路电磁场综合p106/p115/p124
-    makeCards([
-      { t: '电路电磁场综合-01', p: 106 }, { t: '电路电磁场综合-10', p: 115 }, { t: '电路电磁场综合-19', p: 124 }
-    ], pd.gongkongquan.bvid, '工控圈·补充精讲')
-  );
-  // 11. 电磁场 (姜小白p37 + 工控圈p11-15 + 电教p17)
-  D.emf = [].concat(
-    makeCards([{ t: '电工1-电磁场', p: 37 }], pd.jiangxiaobai.bvid, '姜小白'),
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^电磁场/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第16讲-电磁场', p: 17 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 12. 模拟电子技术 (姜小白模电p43-45 + 工控圈p16-22 + 电教p14)
-  D.analog = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^电工[7-9]/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白·模电'),
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^模电/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第13讲-模拟电子', p: 14 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 13. 数字电子技术 (姜小白数电p46-47 + 工控圈p23-29 + 电教p15)
-  D.digital = [].concat(
-    makeCards(pd.jiangxiaobai.playlist.filter(function (x) { return /^电工1[01]/.test(x.t); }),
-      pd.jiangxiaobai.bvid, '姜小白·数电'),
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^数电/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第14讲-数字电子', p: 15 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 14. 电机与变压器 (姜小白p42 + 工控圈p30-37 + 电教p18 + 工控圈电机专项p96/100/105)
-  D.motor = [].concat(
-    makeCards([{ t: '电工6-电动机与变压器', p: 42 }], pd.jiangxiaobai.bvid, '姜小白'),
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^电气[1-5]|^电机学补充|^电机-/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第17讲-电机与变压器', p: 18 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 15. 电气/电力系统基础 (工控圈p38-40 + 答疑p71/81/89 + 电教p19 + 电气基础综合p125-134)
-  D['power-pd'] = [].concat(
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^电气[678]|电气布置答疑|供配电系统答疑|线路答疑|电气工程基础/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第18讲-电气工程基础', p: 19 }], pd.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 16. 短路电流计算 (工控圈p50-53 + 答疑p73)
-  D.short = [].concat(
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^短路电流|短路电流计算答疑/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈·短路计算')
-  );
-  // 17. 负荷计算 (工控圈p54-57 + 答疑p77)
-  D.load = [].concat(
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^负荷计算|负荷计算答疑/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈·负荷')
-  );
-  // 18. 电气安全/低压电器 (工控圈p41-45安全 + p46-49低压 + 答疑p63/65/69)
-  D.safety = [].concat(
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^安全[1-5]|安全答疑|传动答疑|低压电器[1-4]|低压电器答疑/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈·安全/低压')
-  );
-  // 19. 照明/布线/智能化/直流 (工控圈p58-62照明布线 + p91/93/94/95答疑)
-  D.light = [].concat(
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /^照明[1-3]|照明答疑|综合布线|智能化答疑|智能化真题|直流系统真题/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈·照明/布线/智能')
-  );
-  // 20. 防雷/过电压/接地 (工控圈p75防雷 + p85接地 + 导体电缆p67 + 节能p87)
-  D.grounding = [].concat(
-    makeCards(pd.gongkongquan.playlist.filter(function (x) { return /防雷|接地答疑|导体电缆答疑|节能答疑/.test(x.t); }),
-      pd.gongkongquan.bvid, '工控圈·防雷/接地/节能')
-  );
-  // 21. 考前冲刺串讲 (大熊6讲 + 电教p10电工电子总复习)
-  D.sprint = [].concat(
-    makeCards(pd.daxiong.playlist, pd.daxiong.bvid, '大熊·2025冲刺公开课'),
-    makeCards([{ t: '电教第09讲-电工电子技术总复习', p: 10 }], pd.dianjiaozhongxin.bvid, '电教中心·综合')
-  );
-  // 22. 公共基础真题 (BV1Ks 55讲: 答案总览 + 2025001-036 + 079-120)
-  D['zhenti-public'] = makeCards(
-    pd.zhenti.playlist.filter(function (x) { return x.bv === 'BV1Ks15BaEuG'; }),
-    'BV1Ks15BaEuG', '名师团队·公共基础真题(一题一视频)'
-  );
-  // 23. 供配电专业基础真题 (BV1Ck 60讲)
-  D['zhenti-pd'] = makeCards(
-    pd.zhenti.playlist.filter(function (x) { return x.bv === 'BV1Ck1FBXEBd'; }),
-    'BV1Ck1FBXEBd', '名师团队·供配电专业基础真题'
-  );
+  // === 大类1: 公共基础精讲班(姜小白 BV1BaJFzFERX, 52讲) ===
+  D.jiangxiaobai = {};
+  D.jiangxiaobai.math = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^数学[1-9]|^数学1[0-2]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.linear = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^数学1[3-5]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.probability = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^数学1[6-8]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.physics = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^物理/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.chemistry = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^化学/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.mech = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^理论力学/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.econ = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^工程经济/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.signal = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^信号/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.emf = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工1-电磁场/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.circuit = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工[2-5]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.motor = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工6/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.analog = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工[7-9]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.digital = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工1[01]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
 
-  SUBJECT_CARDS.powerDistribution = D;
+  // === 大类2: 专业基础精讲班(工控圈 BV1ie41127kX, 200+讲) ===
+  D.gongkongquan = {};
+  D.gongkongquan.circuit = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电路/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.emf = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电磁场/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.analog = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^模电/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.digital = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^数电/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.motor = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电气[1-5]|^电机学补充|^电机-/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.power = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电气[678]|电气布置答疑|供配电系统答疑|线路答疑|电气工程基础/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.short = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^短路电流|短路电流计算答疑/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.load = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^负荷计算|负荷计算答疑/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.safety = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^安全[1-5]|安全答疑|传动答疑|低压电器[1-4]|低压电器答疑/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.light = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^照明[1-3]|照明答疑|综合布线|智能化答疑|智能化真题|直流系统真题/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.grounding = makeCards(V.gongkongquan.playlist.filter(function (x) { return /防雷|接地答疑|导体电缆答疑|节能答疑/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.extra = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电路电磁场/.test(x.t); }), V.gongkongquan.bvid, '工控圈·补充');
+
+  // === 大类3: 电教中心(BV1FE411W75f, 19讲) ===
+  D.dianjiaozhongxin = {};
+  var djz = V.dianjiaozhongxin.playlist;
+  D.dianjiaozhongxin.intro = makeCards(djz.filter(function (x) { return /^考试介绍/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.math = makeCards(djz.filter(function (x) { return /^第01讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.linear = makeCards(djz.filter(function (x) { return /^第02讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.probability = makeCards(djz.filter(function (x) { return /^第03讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.physics = makeCards(djz.filter(function (x) { return /^第04讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.chemistry = makeCards(djz.filter(function (x) { return /^第05讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.mech = makeCards(djz.filter(function (x) { return /^第06讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.matmech = makeCards(djz.filter(function (x) { return /^第07讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.fluid = makeCards(djz.filter(function (x) { return /^第08讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.electro = makeCards(djz.filter(function (x) { return /^第09讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.signal = makeCards(djz.filter(function (x) { return /^第10讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.computer = makeCards(djz.filter(function (x) { return /^第11讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.econ = makeCards(djz.filter(function (x) { return /^第12讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.analog = makeCards(djz.filter(function (x) { return /^第13讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.digital = makeCards(djz.filter(function (x) { return /^第14讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.circuit = makeCards(djz.filter(function (x) { return /^第15讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.emf = makeCards(djz.filter(function (x) { return /^第16讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.motor = makeCards(djz.filter(function (x) { return /^第17讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.power = makeCards(djz.filter(function (x) { return /^第18讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+
+  // === 大类4: 冲刺课(大熊 BV1PmsPzPEgJ, 6讲) ===
+  D.daxiong = {};
+  D.daxiong.sprint = makeCards(V.daxiong.playlist, V.daxiong.bvid, '大熊');
+
+  // === 大类5: 真题讲解 ===
+  D.zhenti = {};
+  D.zhenti.public = makeCards(V.zhenti.playlist.filter(function (x) { return x.bv === 'BV1Ks15BaEuG'; }), 'BV1Ks15BaEuG', '名师团队·公共基础真题');
+  D.zhenti.professional = makeCards(V.zhenti.playlist.filter(function (x) { return x.bv === 'BV1Ck1FBXEBd'; }), 'BV1Ck1FBXEBd', '名师团队·供配电专业真题');
+
+  COURSE_CARDS.powerDistribution = D;
 })();
 
 // ========== 发输变电方向 ==========
 (function buildPt() {
-  var pt = VIDEOS.powerTransmission;
+  var V = VIDEOS.powerTransmission;
+  var Vpd = VIDEOS.powerDistribution;
   var D = {};
 
-  // 1-9 公共学科 (与供配电相同结构,不同方向描述标签)
-  D.math = makeCards(
-    pt.jiangxiaobai.playlist.filter(function (x) { return /^数学[1-9]|^数学1[0-2]/.test(x.t); }),
-    pt.jiangxiaobai.bvid, '姜小白·公共基础精讲'
-  ).concat(makeCards([{ t: '电教第01讲-高等数学', p: 2 }], pt.dianjiaozhongxin.bvid, '电教中心'));
-  D.linear = makeCards(
-    pt.jiangxiaobai.playlist.filter(function (x) { return /^数学1[3-5]/.test(x.t); }),
-    pt.jiangxiaobai.bvid, '姜小白'
-  ).concat(makeCards([{ t: '电教第02讲-线性代数', p: 3 }], pt.dianjiaozhongxin.bvid, '电教中心'));
-  D.probability = makeCards(
-    pt.jiangxiaobai.playlist.filter(function (x) { return /^数学1[6-8]/.test(x.t); }),
-    pt.jiangxiaobai.bvid, '姜小白'
-  ).concat(makeCards([{ t: '电教第03讲-概率统计', p: 4 }], pt.dianjiaozhongxin.bvid, '电教中心'));
-  D.physics = makeCards(
-    pt.jiangxiaobai.playlist.filter(function (x) { return /^物理/.test(x.t); }),
-    pt.jiangxiaobai.bvid, '姜小白'
-  ).concat(makeCards([{ t: '电教第04讲-物理', p: 5 }], pt.dianjiaozhongxin.bvid, '电教中心'));
-  D.chemistry = makeCards(
-    pt.jiangxiaobai.playlist.filter(function (x) { return /^化学/.test(x.t); }),
-    pt.jiangxiaobai.bvid, '姜小白'
-  ).concat(makeCards([{ t: '电教第05讲-化学', p: 6 }], pt.dianjiaozhongxin.bvid, '电教中心'));
-  // 注意: 化学2p26(原子分子结构续) 在原PT playlist少了, 手动补一讲
-  var _ptChemFix = [{ t: '化学2-原子分子结构(二)续', p: 26 }];
-  D.chemistry = D.chemistry.concat(makeCards(_ptChemFix, pt.jiangxiaobai.bvid, '姜小白·补'));
-  D.mech = makeCards(
-    pt.jiangxiaobai.playlist.filter(function (x) { return /^理论力学/.test(x.t); }),
-    pt.jiangxiaobai.bvid, '姜小白·理论力学'
-  ).concat(makeCards([
-    { t: '电教第06讲-理论力学', p: 7 }, { t: '电教第07讲-材料力学', p: 8 }, { t: '电教第08讲-流体力学', p: 9 }
-  ], pt.dianjiaozhongxin.bvid, '电教中心'));
-  D.econ = makeCards(
-    pt.jiangxiaobai.playlist.filter(function (x) { return /^工程经济/.test(x.t); }),
-    pt.jiangxiaobai.bvid, '姜小白'
-  ).concat(makeCards([{ t: '电教第12讲-工程经济', p: 13 }], pt.dianjiaozhongxin.bvid, '电教中心'));
-  D.signal = makeCards(
-    pt.jiangxiaobai.playlist.filter(function (x) { return /^信号/.test(x.t); }),
-    pt.jiangxiaobai.bvid, '姜小白'
-  ).concat(makeCards([{ t: '电教第10讲-信号与信息', p: 11 }], pt.dianjiaozhongxin.bvid, '电教中心'));
-  D.computer = makeCards([{ t: '电教第11讲-计算机应用基础', p: 12 }], pt.dianjiaozhongxin.bvid, '电教中心');
+  // === 大类1: 公共基础精讲班(姜小白, 同供配电52讲) ===
+  D.jiangxiaobai = {};
+  D.jiangxiaobai.math = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^数学[1-9]|^数学1[0-2]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.linear = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^数学1[3-5]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.probability = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^数学1[6-8]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.physics = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^物理/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.chemistry = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^化学/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白').concat(makeCards([{ t: '化学2-原子分子结构(二)续', p: 26 }], V.jiangxiaobai.bvid, '姜小白'));
+  D.jiangxiaobai.mech = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^理论力学/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.econ = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^工程经济/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.signal = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^信号/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.emf = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工1-电磁场/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.circuit = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工[2-5]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.motor = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工6/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.analog = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工[7-9]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
+  D.jiangxiaobai.digital = makeCards(V.jiangxiaobai.playlist.filter(function (x) { return /^电工1[01]/.test(x.t); }), V.jiangxiaobai.bvid, '姜小白');
 
-  // 10. 电路 (工控圈电路p1-10 + 姜小白电路 + 电路电磁场综合)
-  D.circuit = [].concat(
-    makeCards(pt.jiangxiaobai.playlist.filter(function (x) { return /^电工[2-5]/.test(x.t); }),
-      pt.jiangxiaobai.bvid, '姜小白·电路'),
-    makeCards(pt.gongkongquan.playlist.filter(function (x) { return /^电路/.test(x.t); }),
-      pt.gongkongquan.bvid, '工控圈·专业精讲'),
-    makeCards([{ t: '电教第15讲-电路', p: 16 }], pt.dianjiaozhongxin.bvid, '电教中心'),
-    makeCards([
-      { t: '电路电磁场综合-01', p: 106 }, { t: '电路电磁场综合-10', p: 115 }, { t: '电路电磁场综合-19', p: 124 }
-    ], pt.gongkongquan.bvid, '工控圈·补充')
-  );
-  // 11. 电磁场 (工控圈p11-15 + 姜小白p37)
-  D.emf = [].concat(
-    makeCards([{ t: '电工1-电磁场', p: 37 }], pt.jiangxiaobai.bvid, '姜小白'),
-    makeCards(pt.gongkongquan.playlist.filter(function (x) { return /^电磁场/.test(x.t); }),
-      pt.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第16讲-电磁场', p: 17 }], pt.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 12. 模电 (工控圈p16-22)
-  D.analog = [].concat(
-    makeCards(pt.jiangxiaobai.playlist.filter(function (x) { return /^电工[7-9]/.test(x.t); }),
-      pt.jiangxiaobai.bvid, '姜小白'),
-    makeCards(pt.gongkongquan.playlist.filter(function (x) { return /^模电/.test(x.t); }),
-      pt.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第13讲-模拟电子', p: 14 }], pt.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 13. 数电 (工控圈p23-29)
-  D.digital = [].concat(
-    makeCards(pt.jiangxiaobai.playlist.filter(function (x) { return /^电工1[01]/.test(x.t); }),
-      pt.jiangxiaobai.bvid, '姜小白'),
-    makeCards(pt.gongkongquan.playlist.filter(function (x) { return /^数电/.test(x.t); }),
-      pt.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第14讲-数字电子', p: 15 }], pt.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 14. 电机 (工控圈p30-37 + 电机专项p96/100/105)
-  D.motor = [].concat(
-    makeCards([{ t: '电工6-电动机与变压器', p: 42 }], pt.jiangxiaobai.bvid, '姜小白'),
-    makeCards(pt.gongkongquan.playlist.filter(function (x) { return /^电气[1-5]|电机补充|电机-/.test(x.t); }),
-      pt.gongkongquan.bvid, '工控圈'),
-    makeCards([{ t: '电教第17讲-电机与变压器', p: 18 }], pt.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 15. 电力系统(潮流/稳定) (工控圈p38-40 + 电气基础综合p125-134 + 电教p19)
-  D['power-pt'] = [].concat(
-    makeCards(pt.gongkongquan.playlist.filter(function (x) { return /^电气[678]|电气工程基础/.test(x.t); }),
-      pt.gongkongquan.bvid, '工控圈·电力系统/潮流'),
-    makeCards([{ t: '电教第18讲-电气工程基础', p: 19 }], pt.dianjiaozhongxin.bvid, '电教中心')
-  );
-  // 16. 短路电流计算 (工控圈p50-53 + 答疑p73)
-  D.short = makeCards(
-    pt.gongkongquan.playlist.filter(function (x) { return /^短路电流|短路电流计算答疑/.test(x.t); }),
-    pt.gongkongquan.bvid, '工控圈·短路'
-  );
-  // 17. 高电压技术/高压电器 (工控圈p79高压电器答疑)
-  D.hv = makeCards(
-    pt.gongkongquan.playlist.filter(function (x) { return /高压电器答疑/.test(x.t); }),
-    pt.gongkongquan.bvid, '工控圈·高压电器'
-  );
-  // 18. 绝缘配合/过电压/防雷接地 (工控圈p75防雷 + p85接地 + 线路答疑p89)
-  D.insulation = makeCards(
-    pt.gongkongquan.playlist.filter(function (x) { return /防雷|接地答疑|线路答疑/.test(x.t); }),
-    pt.gongkongquan.bvid, '工控圈·绝缘/过电压/防雷'
-  );
-  // 19. 电力系统继电保护 (工控圈p83)
-  D.relay = makeCards(
-    pt.gongkongquan.playlist.filter(function (x) { return /继电保护答疑/.test(x.t); }),
-    pt.gongkongquan.bvid, '工控圈·继电保护'
-  );
-  // 20. 考前冲刺
-  D.sprint = [].concat(
-    makeCards(pt.daxiong.playlist, pt.daxiong.bvid, '大熊·2025冲刺'),
-    makeCards([{ t: '电教第09讲-电工电子技术', p: 10 }], pt.dianjiaozhongxin.bvid, '电教中心·综合')
-  );
-  // 21. 公共基础真题(完整,同供配电方向)
-  D['zhenti-public'] = makeCards(
-    (VIDEOS.powerDistribution.zhenti.playlist || []).filter(function (x) { return x.bv === 'BV1Ks15BaEuG'; }),
-    'BV1Ks15BaEuG', '名师团队·公共基础真题(上午卷)'
-  );
-  // 22. 发输变电专业基础真题 (BV1uuyfBtEig + 供配电参考BV1Ck 60讲)
-  var ptZhentiPtOnly = pt.zhenti.playlist.filter(function (x) { return x.bv === 'BV1uuyfBtEig'; });
-  var refPdZhentiAll = (VIDEOS.powerDistribution.zhenti.playlist || []).filter(function (x) { return x.bv === 'BV1Ck1FBXEBd'; }).map(function (x) { return { t: '参考:' + x.t, p: x.p, bv: x.bv }; });
-  D['zhenti-pt'] = makeCards(ptZhentiPtOnly.concat(refPdZhentiAll), null, '名师团队·发输变电专业基础真题(含供配电参考60讲)');
+  // === 大类2: 专业基础精讲班(工控圈, 发输电方向特色) ===
+  D.gongkongquan = {};
+  D.gongkongquan.circuit = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电路/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.emf = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电磁场/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.analog = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^模电/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.digital = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^数电/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.motor = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电气[1-5]|电机补充|电机-/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.power = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电气[678]|电气工程基础/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.short = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^短路电流|短路电流计算答疑/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.hv = makeCards(V.gongkongquan.playlist.filter(function (x) { return /高压电器答疑/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.insulation = makeCards(V.gongkongquan.playlist.filter(function (x) { return /防雷|接地答疑|线路答疑/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.relay = makeCards(V.gongkongquan.playlist.filter(function (x) { return /继电保护答疑/.test(x.t); }), V.gongkongquan.bvid, '工控圈');
+  D.gongkongquan.extra = makeCards(V.gongkongquan.playlist.filter(function (x) { return /^电路电磁场/.test(x.t); }), V.gongkongquan.bvid, '工控圈·补充');
 
-  SUBJECT_CARDS.powerTransmission = D;
+  // === 大类3: 电教中心(同供配电19讲) ===
+  D.dianjiaozhongxin = {};
+  var djz = V.dianjiaozhongxin.playlist;
+  D.dianjiaozhongxin.intro = makeCards(djz.filter(function (x) { return /^考试介绍/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.math = makeCards(djz.filter(function (x) { return /^第01讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.linear = makeCards(djz.filter(function (x) { return /^第02讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.probability = makeCards(djz.filter(function (x) { return /^第03讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.physics = makeCards(djz.filter(function (x) { return /^第04讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.chemistry = makeCards(djz.filter(function (x) { return /^第05讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.mech = makeCards(djz.filter(function (x) { return /^第06讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.matmech = makeCards(djz.filter(function (x) { return /^第07讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.fluid = makeCards(djz.filter(function (x) { return /^第08讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.electro = makeCards(djz.filter(function (x) { return /^第09讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.signal = makeCards(djz.filter(function (x) { return /^第10讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.computer = makeCards(djz.filter(function (x) { return /^第11讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.econ = makeCards(djz.filter(function (x) { return /^第12讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.analog = makeCards(djz.filter(function (x) { return /^第13讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.digital = makeCards(djz.filter(function (x) { return /^第14讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.circuit = makeCards(djz.filter(function (x) { return /^第15讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.emf = makeCards(djz.filter(function (x) { return /^第16讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.motor = makeCards(djz.filter(function (x) { return /^第17讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+  D.dianjiaozhongxin.power = makeCards(djz.filter(function (x) { return /^第18讲/.test(x.t); }), V.dianjiaozhongxin.bvid, '电教中心');
+
+  // === 大类4: 冲刺课(同供配电6讲) ===
+  D.daxiong = {};
+  D.daxiong.sprint = makeCards(V.daxiong.playlist, V.daxiong.bvid, '大熊');
+
+  // === 大类5: 真题讲解 ===
+  D.zhenti = {};
+  D.zhenti.public = makeCards(Vpd.zhenti.playlist.filter(function (x) { return x.bv === 'BV1Ks15BaEuG'; }), 'BV1Ks15BaEuG', '名师团队·公共基础真题');
+  var ptZhentiOnly = V.zhenti.playlist.filter(function (x) { return x.bv === 'BV1uuyfBtEig'; });
+  var refPdZhenti = Vpd.zhenti.playlist.filter(function (x) { return x.bv === 'BV1Ck1FBXEBd'; }).map(function (x) { return { t: '参考:' + x.t, p: x.p, bv: x.bv }; });
+  D.zhenti.professional = makeCards(ptZhentiOnly.concat(refPdZhenti), null, '名师团队·发输变电专业真题');
+
+  COURSE_CARDS.powerTransmission = D;
 })();
 
 // B站工具函数

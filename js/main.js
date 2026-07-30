@@ -310,99 +310,173 @@
       '</div>';
   }
 
-  // ===== 视频页面渲染(按学科全量393讲分组+Tab切换) =====
+  // ===== 视频页面渲染(5大课程大类 × 学科 两层Tab + 全量393讲) =====
   function initVideosPage() {
     const container = document.getElementById('videos-content');
-    if (!container || typeof VIDEOS === 'undefined' || typeof SUBJECT_VIDEOS === 'undefined' || typeof SUBJECT_CARDS === 'undefined') return;
+    if (!container || typeof VIDEOS === 'undefined' || typeof COURSE_CATEGORIES === 'undefined' || typeof COURSE_CARDS === 'undefined') return;
 
-    // 当前激活的学科tab(默认取第一个学科key)
-    var activeTab = null;
+    // 当前激活的大类key + 学科key
+    var activeCategory = null;
+    var activeSubject = null;
 
-    function getTabs() {
-      var dirKey = getDirectionKey();
-      var sv = SUBJECT_VIDEOS;
-      var list = [];
-      list = list.concat(sv.common || []);
-      list = list.concat(sv.electro || []);
-      list = list.concat(dirKey === 'powerDistribution' ? sv.pd || [] : sv.pt || []);
-      list = list.concat(sv.review || []);
-      list = list.concat(dirKey === 'powerDistribution' ? sv.zhentiPd || [] : sv.zhentiPt || []);
-      return list;
+    // 取某大类在某方向下的学科列表(静态学科直接用,动态学科按方向查表)
+    function getCategorySubjects(category, dirKey) {
+      if (category.subjects && category.subjects.length > 0) return category.subjects;
+      if (category.key === 'gongkongquan') {
+        return dirKey === 'powerDistribution' ? GKQ_SUBJECTS_PD : GKQ_SUBJECTS_PT;
+      }
+      if (category.key === 'zhenti') {
+        return dirKey === 'powerDistribution' ? ZHENTI_SUBJECTS_PD : ZHENTI_SUBJECTS_PT;
+      }
+      return [];
     }
 
-    function countCardsForSubject(subjectKey, dirKey) {
-      var cards = (SUBJECT_CARDS[dirKey] || {})[subjectKey];
+    function countCards(categoryKey, subjectKey, dirKey) {
+      var cardsMap = (COURSE_CARDS[dirKey] || {})[categoryKey] || {};
+      var cards = cardsMap[subjectKey];
       return (cards && cards.length) ? cards.length : 0;
+    }
+
+    function countCategoryTotal(categoryKey, dirKey) {
+      var cat = COURSE_CATEGORIES.find(function (c) { return c.key === categoryKey; });
+      if (!cat) return 0;
+      var subjects = getCategorySubjects(cat, dirKey);
+      var total = 0;
+      subjects.forEach(function (s) { total += countCards(categoryKey, s.key, dirKey); });
+      return total;
+    }
+
+    function countGrandTotal(dirKey) {
+      var total = 0;
+      COURSE_CATEGORIES.forEach(function (c) { total += countCategoryTotal(c.key, dirKey); });
+      return total;
+    }
+
+    // 选首个有卡片的大类和学科作为默认
+    function pickDefaults(dirKey) {
+      for (var i = 0; i < COURSE_CATEGORIES.length; i++) {
+        var cat = COURSE_CATEGORIES[i];
+        var subjects = getCategorySubjects(cat, dirKey);
+        for (var j = 0; j < subjects.length; j++) {
+          if (countCards(cat.key, subjects[j].key, dirKey) > 0) {
+            return { category: cat.key, subject: subjects[j].key };
+          }
+        }
+      }
+      return { category: null, subject: null };
+    }
+
+    function ensureActiveValid(dirKey) {
+      var validCats = COURSE_CATEGORIES.filter(function (c) { return countCategoryTotal(c.key, dirKey) > 0; });
+      var catOk = activeCategory && validCats.some(function (c) { return c.key === activeCategory; });
+      if (!catOk) {
+        var d = pickDefaults(dirKey);
+        activeCategory = d.category;
+        activeSubject = d.subject;
+        return;
+      }
+      // 大类OK,校验学科
+      var cat = validCats.find(function (c) { return c.key === activeCategory; });
+      var subs = getCategorySubjects(cat, dirKey);
+      if (!activeSubject || countCards(activeCategory, activeSubject, dirKey) === 0) {
+        activeSubject = null;
+        for (var k = 0; k < subs.length; k++) {
+          if (countCards(activeCategory, subs[k].key, dirKey) > 0) { activeSubject = subs[k].key; break; }
+        }
+      }
     }
 
     function render() {
       var dirKey = getDirectionKey();
       var dirLabel = getDirectionLabel();
-      var tabs = getTabs();
-      var cardsMap = SUBJECT_CARDS[dirKey] || {};
-      // 确保activeTab合法
-      if (!activeTab || !cardsMap[activeTab] || cardsMap[activeTab].length === 0) {
-        for (var i = 0; i < tabs.length; i++) {
-          if (countCardsForSubject(tabs[i].key, dirKey) > 0) { activeTab = tabs[i].key; break; }
-        }
-      }
+      var cardsByDir = COURSE_CARDS[dirKey] || {};
+      ensureActiveValid(dirKey);
 
-      var totalCount = 0;
-      tabs.forEach(function (t) { totalCount += countCardsForSubject(t.key, dirKey); });
-
+      var validCats = COURSE_CATEGORIES.filter(function (c) { return countCategoryTotal(c.key, dirKey) > 0; });
+      var grandTotal = countGrandTotal(dirKey);
       var html = '';
 
-      // 学科统计+搜索卡片
+      // 顶部概览统计
       html += '<div class="subject-overview">';
       html += '<div class="subject-overview-stat">';
-      html += '<div class="stat-big-num">' + tabs.length + '</div>';
-      html += '<div class="stat-label">学科分组</div>';
+      html += '<div class="stat-big-num">' + validCats.length + '</div>';
+      html += '<div class="stat-label">课程大类</div>';
       html += '</div>';
       html += '<div class="subject-overview-stat">';
-      html += '<div class="stat-big-num" style="color:var(--primary)">' + totalCount + '</div>';
-      html += '<div class="stat-label">讲 (393全量整合)</div>';
+      html += '<div class="stat-big-num" style="color:#f1c40f">' + grandTotal + '</div>';
+      html += '<div class="stat-label">讲 (全量整合)</div>';
       html += '</div>';
-      // B站搜索(综合)
       var biliAllSearchUrl = dirKey === 'powerDistribution'
         ? 'https://search.bilibili.com/all?keyword=%E6%B3%A8%E5%86%8C%E7%94%B5%E6%B0%94%E5%B7%A5%E7%A8%8B%E5%B8%88%20%E5%9F%BA%E7%A1%80%E8%80%83%E8%AF%95%20%E4%BE%9B%E9%85%8D%E7%94%B5'
         : 'https://search.bilibili.com/all?keyword=%E6%B3%A8%E5%86%8C%E7%94%B5%E6%B0%94%E5%B7%A5%E7%A8%8B%E5%B8%88%20%E5%9F%BA%E7%A1%80%E8%80%83%E8%AF%95%20%E5%8F%91%E8%BE%93%E5%8F%98%E7%94%B5';
       html += '<a href="' + biliAllSearchUrl + '" target="_blank" rel="noopener" class="btn btn-bili" style="margin-left:auto;"><i class="fab fa-bilibili"></i> B站综合搜索 · ' + dirLabel + '</a>';
       html += '</div>';
 
-      // 学科Tab栏
-      html += '<div class="subject-tabs" role="tablist">';
-      tabs.forEach(function (t) {
-        var cnt = countCardsForSubject(t.key, dirKey);
-        if (cnt <= 0) return; // 没有卡片的学科不显示
-        var active = (t.key === activeTab);
-        html += '<button class="subject-tab' + (active ? ' active' : '') + '" data-subject="' + t.key + '" role="tab" aria-selected="' + active + '">';
-        html += '<i class="' + t.icon + '" style="color:' + t.color + '"></i>';
-        html += '<span class="subject-tab-name">' + escapeHtml(t.name) + '</span>';
-        html += '<span class="subject-tab-count">' + cnt + '</span>';
+      // === 第一层:大类Tab栏 ===
+      html += '<div class="category-tabs" role="tablist">';
+      validCats.forEach(function (cat) {
+        var cnt = countCategoryTotal(cat.key, dirKey);
+        if (cnt <= 0) return;
+        var active = (cat.key === activeCategory);
+        var styleAttr = active ? ' style="background:' + cat.color + ';border-color:' + cat.color + ';color:#fff;"' : '';
+        html += '<button class="category-tab' + (active ? ' active' : '') + '" data-category="' + cat.key + '" role="tab" aria-selected="' + active + '"' + styleAttr + '>';
+        html += '<i class="' + cat.icon + '"></i>';
+        html += '<span class="category-tab-name">' + escapeHtml(cat.name) + '</span>';
+        html += '<span class="category-tab-count">' + cnt + '讲</span>';
         html += '</button>';
       });
       html += '</div>';
 
-      // 主内容:当前Tab的学科卡片
-      var subjectMeta = tabs.find(function (t) { return t.key === activeTab; }) || tabs[0];
-      var cards = cardsMap[activeTab] || [];
-      if (subjectMeta) {
-        html += '<div class="subject-section">';
-        html += '<div class="subject-section-header" style="border-left: 6px solid ' + subjectMeta.color + '">';
-        html += '<h2 class="subject-section-title"><i class="' + subjectMeta.icon + '" style="color:' + subjectMeta.color + '"></i>' + escapeHtml(subjectMeta.name) + '</h2>';
-        html += '<div class="subject-section-count"><i class="fas fa-list"></i> 共 ' + cards.length + ' 讲视频</div>';
+      // === 大类信息条(描述+主讲老师) ===
+      var activeCat = COURSE_CATEGORIES.find(function (c) { return c.key === activeCategory; });
+      if (activeCat) {
+        html += '<div class="category-info-bar" style="border-left:6px solid ' + activeCat.color + ';">';
+        html += '<div class="category-info-text">';
+        html += '<h2><i class="' + activeCat.icon + '" style="color:' + activeCat.color + '"></i>' + escapeHtml(activeCat.name) + '</h2>';
+        html += '<p>' + escapeHtml(activeCat.desc || '') + '</p>';
         html += '</div>';
-        html += '<div class="video-grid">';
-        cards.forEach(function (card, i) {
-          var seq = i + 1;
-          html += renderSubjectVideoCard(card, seq);
-        });
-        // 每个学科最后加一个搜索卡
-        var kw = subjectMeta.name + ' 注册电气工程师基础考试';
-        var subjectSearch = 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(kw);
-        html += renderSubjectSearchCard(subjectMeta, subjectSearch);
+        if (activeCat.teacher) {
+          html += '<div class="category-info-teacher"><i class="fas fa-user-tie"></i> 主讲:' + escapeHtml(activeCat.teacher) + '</div>';
+        }
         html += '</div>';
-        html += '</div>';
+
+        // === 第二层:学科Tab栏 ===
+        var subjects = getCategorySubjects(activeCat, dirKey);
+        var validSubjects = subjects.filter(function (s) { return countCards(activeCategory, s.key, dirKey) > 0; });
+        if (validSubjects.length > 0) {
+          html += '<div class="subject-tabs" role="tablist">';
+          validSubjects.forEach(function (s) {
+            var cnt = countCards(activeCategory, s.key, dirKey);
+            var active = (s.key === activeSubject);
+            html += '<button class="subject-tab' + (active ? ' active' : '') + '" data-subject="' + s.key + '" role="tab" aria-selected="' + active + '">';
+            html += '<i class="' + s.icon + '" style="color:' + s.color + '"></i>';
+            html += '<span class="subject-tab-name">' + escapeHtml(s.name) + '</span>';
+            html += '<span class="subject-tab-count">' + cnt + '</span>';
+            html += '</button>';
+          });
+          html += '</div>';
+        }
+
+        // === 当前学科的视频卡片 ===
+        var subjectMeta = validSubjects.find(function (s) { return s.key === activeSubject; });
+        var cards = (cardsByDir[activeCategory] || {})[activeSubject] || [];
+        if (subjectMeta) {
+          html += '<div class="subject-section">';
+          html += '<div class="subject-section-header" style="border-left: 6px solid ' + subjectMeta.color + '">';
+          html += '<h2 class="subject-section-title"><i class="' + subjectMeta.icon + '" style="color:' + subjectMeta.color + '"></i>' + escapeHtml(subjectMeta.name) + '</h2>';
+          html += '<div class="subject-section-count"><i class="fas fa-list"></i> 共 ' + cards.length + ' 讲视频</div>';
+          html += '</div>';
+          html += '<div class="video-grid">';
+          cards.forEach(function (card, i) {
+            var seq = i + 1;
+            html += renderSubjectVideoCard(card, seq);
+          });
+          var kw = subjectMeta.name + ' 注册电气工程师基础考试';
+          var subjectSearch = 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(kw);
+          html += renderSubjectSearchCard(subjectMeta, subjectSearch);
+          html += '</div>';
+          html += '</div>';
+        }
       }
 
       container.innerHTML = html;
@@ -410,28 +484,53 @@
       if (dirLabelEl) dirLabelEl.textContent = dirLabel;
       bindMarkButtons(container);
       applyMarkedCardStyle(container);
+      bindCategoryTabs(container);
       bindSubjectTabs(container);
+    }
+
+    function bindCategoryTabs(scope) {
+      if (!scope) scope = document;
+      scope.querySelectorAll('.category-tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var newCat = btn.dataset.category;
+          if (newCat === activeCategory) return;
+          activeCategory = newCat;
+          // 重置学科为该大类下首个有卡片的学科
+          var dirKey = getDirectionKey();
+          var cat = COURSE_CATEGORIES.find(function (c) { return c.key === activeCategory; });
+          var subs = cat ? getCategorySubjects(cat, dirKey) : [];
+          activeSubject = null;
+          for (var k = 0; k < subs.length; k++) {
+            if (countCards(activeCategory, subs[k].key, dirKey) > 0) { activeSubject = subs[k].key; break; }
+          }
+          render();
+          scrollToTabsEl('.category-tabs');
+        });
+      });
     }
 
     function bindSubjectTabs(scope) {
       if (!scope) scope = document;
       scope.querySelectorAll('.subject-tab').forEach(function (btn) {
         btn.addEventListener('click', function () {
-          activeTab = btn.dataset.subject;
+          activeSubject = btn.dataset.subject;
           render();
-          if (window.scrollTo) {
-            var el = document.querySelector('.subject-tabs');
-            if (el) {
-              var rect = el.getBoundingClientRect();
-              window.scrollTo({ top: window.pageYOffset + rect.top - 80, behavior: 'smooth' });
-            }
-          }
+          scrollToTabsEl('.subject-tabs');
         });
       });
     }
 
+    function scrollToTabsEl(selector) {
+      if (!window.scrollTo) return;
+      var el = document.querySelector(selector);
+      if (el) {
+        var rect = el.getBoundingClientRect();
+        window.scrollTo({ top: window.pageYOffset + rect.top - 80, behavior: 'smooth' });
+      }
+    }
+
     render();
-    document.addEventListener('directionChanged', function () { activeTab = null; render(); });
+    document.addEventListener('directionChanged', function () { activeCategory = null; activeSubject = null; render(); });
     document.addEventListener('authChanged', render);
   }
 
