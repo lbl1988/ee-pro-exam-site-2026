@@ -310,48 +310,128 @@
       '</div>';
   }
 
-  // ===== 视频页面渲染 =====
+  // ===== 视频页面渲染(按学科全量393讲分组+Tab切换) =====
   function initVideosPage() {
     const container = document.getElementById('videos-content');
-    if (!container || typeof VIDEOS === 'undefined') return;
+    if (!container || typeof VIDEOS === 'undefined' || typeof SUBJECT_VIDEOS === 'undefined' || typeof SUBJECT_CARDS === 'undefined') return;
+
+    // 当前激活的学科tab(默认取第一个学科key)
+    var activeTab = null;
+
+    function getTabs() {
+      var dirKey = getDirectionKey();
+      var sv = SUBJECT_VIDEOS;
+      var list = [];
+      list = list.concat(sv.common || []);
+      list = list.concat(sv.electro || []);
+      list = list.concat(dirKey === 'powerDistribution' ? sv.pd || [] : sv.pt || []);
+      list = list.concat(sv.review || []);
+      list = list.concat(dirKey === 'powerDistribution' ? sv.zhentiPd || [] : sv.zhentiPt || []);
+      return list;
+    }
+
+    function countCardsForSubject(subjectKey, dirKey) {
+      var cards = (SUBJECT_CARDS[dirKey] || {})[subjectKey];
+      return (cards && cards.length) ? cards.length : 0;
+    }
 
     function render() {
-      const dirKey = getDirectionKey();
-      const dirLabel = getDirectionLabel();
-      const videos = VIDEOS[dirKey];
-      const order = ['jiangxiaobai', 'gongkongquan', 'daxiong', 'dianjiaozhongxin', 'zhenti'];
+      var dirKey = getDirectionKey();
+      var dirLabel = getDirectionLabel();
+      var tabs = getTabs();
+      var cardsMap = SUBJECT_CARDS[dirKey] || {};
+      // 确保activeTab合法
+      if (!activeTab || !cardsMap[activeTab] || cardsMap[activeTab].length === 0) {
+        for (var i = 0; i < tabs.length; i++) {
+          if (countCardsForSubject(tabs[i].key, dirKey) > 0) { activeTab = tabs[i].key; break; }
+        }
+      }
 
-      let html = '';
-      order.forEach(function (key, idx) {
-        const course = videos[key];
-        if (!course) return;
-        html += '<div class="video-category">';
-        html += '<h2 class="video-category-title"><i class="fas fa-play-circle"></i>' + course.title + '</h2>';
-        html += '<p class="video-category-desc">' + course.description + '</p>';
-        html += '<div class="video-grid">';
-        if (course.episodes && course.episodes.length > 0) {
-          course.episodes.forEach(function (ep) { html += renderVideoCard(ep, course); });
-        }
-        html += renderSearchCard(course);
-        html += '</div>';
-        // 完整播放列表 (折叠)
-        if (course.playlist && course.playlist.length > 0) {
-          html += renderPlaylist(course, key, idx);
-        }
-        html += '</div>';
+      var totalCount = 0;
+      tabs.forEach(function (t) { totalCount += countCardsForSubject(t.key, dirKey); });
+
+      var html = '';
+
+      // 学科统计+搜索卡片
+      html += '<div class="subject-overview">';
+      html += '<div class="subject-overview-stat">';
+      html += '<div class="stat-big-num">' + tabs.length + '</div>';
+      html += '<div class="stat-label">学科分组</div>';
+      html += '</div>';
+      html += '<div class="subject-overview-stat">';
+      html += '<div class="stat-big-num" style="color:var(--primary)">' + totalCount + '</div>';
+      html += '<div class="stat-label">讲 (393全量整合)</div>';
+      html += '</div>';
+      // B站搜索(综合)
+      var biliAllSearchUrl = dirKey === 'powerDistribution'
+        ? 'https://search.bilibili.com/all?keyword=%E6%B3%A8%E5%86%8C%E7%94%B5%E6%B0%94%E5%B7%A5%E7%A8%8B%E5%B8%88%20%E5%9F%BA%E7%A1%80%E8%80%83%E8%AF%95%20%E4%BE%9B%E9%85%8D%E7%94%B5'
+        : 'https://search.bilibili.com/all?keyword=%E6%B3%A8%E5%86%8C%E7%94%B5%E6%B0%94%E5%B7%A5%E7%A8%8B%E5%B8%88%20%E5%9F%BA%E7%A1%80%E8%80%83%E8%AF%95%20%E5%8F%91%E8%BE%93%E5%8F%98%E7%94%B5';
+      html += '<a href="' + biliAllSearchUrl + '" target="_blank" rel="noopener" class="btn btn-bili" style="margin-left:auto;"><i class="fab fa-bilibili"></i> B站综合搜索 · ' + dirLabel + '</a>';
+      html += '</div>';
+
+      // 学科Tab栏
+      html += '<div class="subject-tabs" role="tablist">';
+      tabs.forEach(function (t) {
+        var cnt = countCardsForSubject(t.key, dirKey);
+        if (cnt <= 0) return; // 没有卡片的学科不显示
+        var active = (t.key === activeTab);
+        html += '<button class="subject-tab' + (active ? ' active' : '') + '" data-subject="' + t.key + '" role="tab" aria-selected="' + active + '">';
+        html += '<i class="' + t.icon + '" style="color:' + t.color + '"></i>';
+        html += '<span class="subject-tab-name">' + escapeHtml(t.name) + '</span>';
+        html += '<span class="subject-tab-count">' + cnt + '</span>';
+        html += '</button>';
       });
+      html += '</div>';
+
+      // 主内容:当前Tab的学科卡片
+      var subjectMeta = tabs.find(function (t) { return t.key === activeTab; }) || tabs[0];
+      var cards = cardsMap[activeTab] || [];
+      if (subjectMeta) {
+        html += '<div class="subject-section">';
+        html += '<div class="subject-section-header" style="border-left: 6px solid ' + subjectMeta.color + '">';
+        html += '<h2 class="subject-section-title"><i class="' + subjectMeta.icon + '" style="color:' + subjectMeta.color + '"></i>' + escapeHtml(subjectMeta.name) + '</h2>';
+        html += '<div class="subject-section-count"><i class="fas fa-list"></i> 共 ' + cards.length + ' 讲视频</div>';
+        html += '</div>';
+        html += '<div class="video-grid">';
+        cards.forEach(function (card, i) {
+          var seq = i + 1;
+          html += renderSubjectVideoCard(card, seq);
+        });
+        // 每个学科最后加一个搜索卡
+        var kw = subjectMeta.name + ' 注册电气工程师基础考试';
+        var subjectSearch = 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(kw);
+        html += renderSubjectSearchCard(subjectMeta, subjectSearch);
+        html += '</div>';
+        html += '</div>';
+      }
 
       container.innerHTML = html;
-      const dirLabelEl = document.getElementById('current-direction-label');
+      var dirLabelEl = document.getElementById('current-direction-label');
       if (dirLabelEl) dirLabelEl.textContent = dirLabel;
       bindMarkButtons(container);
       applyMarkedCardStyle(container);
-      bindPlaylistToggles(container);
-      bindPlaylistItems(container);
+      bindSubjectTabs(container);
+    }
+
+    function bindSubjectTabs(scope) {
+      if (!scope) scope = document;
+      scope.querySelectorAll('.subject-tab').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          activeTab = btn.dataset.subject;
+          render();
+          if (window.scrollTo) {
+            var el = document.querySelector('.subject-tabs');
+            if (el) {
+              var rect = el.getBoundingClientRect();
+              window.scrollTo({ top: window.pageYOffset + rect.top - 80, behavior: 'smooth' });
+            }
+          }
+        });
+      });
     }
 
     render();
-    document.addEventListener('directionChanged', render);
+    document.addEventListener('directionChanged', function () { activeTab = null; render(); });
     document.addEventListener('authChanged', render);
   }
 
@@ -360,110 +440,79 @@
     return String(bv || '') + '@p' + String(page || 1);
   }
 
-  // 解析ep和course,返回{bv,page,key}
-  function resolveVideoRef(ep, course) {
-    var bv = ep.bv || (course ? course.bvid : '');
-    var page = ep.page || 1;
-    return {
-      bv: bv,
-      page: page,
-      key: buildVideoKey(bv, page)
-    };
-  }
-
-  function renderVideoCard(ep, course) {
-    var ref = resolveVideoRef(ep, course);
-    var marked = isLoggedIn() && window.EEProgress.isVideoMarked(ref.key);
+  // 渲染学科视频卡片(直接从card:{title,page,bv,teacher,desc}生成)
+  function renderSubjectVideoCard(card, seq) {
+    var bv = card.bv;
+    var page = card.page || 1;
+    var vkey = buildVideoKey(bv, page);
+    var marked = isLoggedIn() && window.EEProgress.isVideoMarked(vkey);
     return '<div class="video-card' + (marked ? ' marked' : '') + '">' +
       '<div class="video-embed-wrapper">' +
-      '<iframe src="' + getBiliEmbedUrl(ref.bv, ref.page) + '" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>' +
+      '<iframe src="' + getBiliEmbedUrl(bv, page) + '" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>' +
       '</div>' +
       '<div class="video-card-body">' +
-      '<h4>' + ep.title + '</h4>' +
-      '<p>' + (ep.desc || '') + '</p>' +
+      '<div class="video-card-seq">#<strong>' + (seq || 1) + '</strong></div>' +
+      '<h4>' + escapeHtml(card.title) + '</h4>' +
+      '<p>' +
+      (card.teacher ? ('<span class="badge badge-teacher"><i class="fas fa-user-tie"></i>' + escapeHtml(card.teacher) + '</span> ') : '') +
+      (card.desc ? escapeHtml(card.desc) : '') +
+      '</p>' +
       '<div class="video-card-footer">' +
-      '<a href="' + getBiliVideoUrl(ref.bv, ref.page) + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> B站观看</a>' +
-      buildMarkButton('video', ref.key, marked) +
+      '<a href="' + getBiliVideoUrl(bv, page) + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> B站观看 P' + page + '</a>' +
+      buildMarkButton('video', vkey, marked) +
       '</div>' +
       '</div>' +
       '</div>';
   }
 
-  // 完整播放列表折叠区
-  function renderPlaylist(course, courseKey, idx) {
-    var total = course.playlist.length;
-    var collapseId = 'playlist-collapse-' + idx;
-    var html = '<div class="playlist-wrapper">';
-    html += '<button class="playlist-toggle" data-target="' + collapseId + '">';
-    html += '<i class="fas fa-list-ul"></i> 查看完整播放列表 <span class="playlist-count">(' + total + '讲)</span>';
-    html += '<i class="fas fa-chevron-down playlist-arrow"></i>';
-    html += '</button>';
-    html += '<div id="' + collapseId + '" class="playlist-collapse">';
-    html += '<ul class="playlist-list">';
-    course.playlist.forEach(function (item, i) {
-      var bv = item.bv || course.bvid;
-      var page = item.p || 1;
-      var key = buildVideoKey(bv, page);
-      var href = getBiliVideoUrl(bv, page);
-      html += '<li class="playlist-item" data-bv="' + escapeAttr(bv) + '" data-page="' + page + '" data-href="' + escapeAttr(href) + '">';
-      html += '<span class="playlist-index">' + (i + 1) + '</span>';
-      html += '<span class="playlist-title">' + escapeHtml(item.t) + '</span>';
-      html += '<span class="playlist-page">P' + page + '</span>';
-      html += '</li>';
-    });
-    html += '</ul></div></div>';
-    return html;
+  // 学科级搜索卡片
+  function renderSubjectSearchCard(subjectMeta, searchUrl) {
+    return '<div class="video-card">' +
+      '<div class="video-embed-wrapper video-placeholder" style="background: linear-gradient(135deg, #2980b9, #8e44ad);">' +
+      '<i class="fas fa-search"></i>' +
+      '<span>搜索更多 · ' + subjectMeta.name + '</span>' +
+      '</div>' +
+      '<div class="video-card-body">' +
+      '<h4><i class="' + subjectMeta.icon + '"></i> B站查找更多「' + subjectMeta.name + '」视频</h4>' +
+      '<p>当前已整合来自姜小白/工控圈/大熊/电教中心/真题5大系列的相关讲次,点击下方按钮在B站继续搜索最新相关视频。</p>' +
+      '<div class="video-card-footer">' +
+      '<a href="' + searchUrl + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> B站搜索</a>' +
+      '</div>' +
+      '</div>' +
+      '</div>';
   }
 
-  // 绑定播放列表展开/折叠
-  function bindPlaylistToggles(container) {
-    if (!container) container = document;
-    container.querySelectorAll('.playlist-toggle').forEach(function (btn) {
-      btn.addEventListener('click', function () {
-        var targetId = btn.dataset.target;
-        var target = document.getElementById(targetId);
-        if (!target) return;
-        var expanded = target.classList.toggle('show');
-        var arrow = btn.querySelector('.playlist-arrow');
-        if (arrow) arrow.style.transform = expanded ? 'rotate(180deg)' : '';
-      });
-    });
+  // 兼容保留:renderVideoCard/resolveVideoRef/playlist系列,防止其他地方调用报错
+  function resolveVideoRef(ep, course) {
+    var bv = ep.bv || (course ? course.bvid : '');
+    var page = ep.page || 1;
+    return { bv: bv, page: page, key: buildVideoKey(bv, page) };
   }
-
-  // 绑定播放列表项点击:跳转到B站新窗口
-  function bindPlaylistItems(container) {
-    if (!container) container = document;
-    container.querySelectorAll('.playlist-item').forEach(function (li) {
-      li.addEventListener('click', function () {
-        var href = li.dataset.href;
-        if (href) window.open(href, '_blank', 'noopener');
-      });
-    });
+  function renderVideoCard(ep, course) {
+    return renderSubjectVideoCard({
+      title: ep.title,
+      page: resolveVideoRef(ep, course).page,
+      bv: resolveVideoRef(ep, course).bv,
+      teacher: (course && course.teacher ? course.teacher : ''),
+      desc: ep.desc || ''
+    }, 1);
   }
-
+  function renderPlaylist() { return ''; }
+  function bindPlaylistToggles() { }
+  function bindPlaylistItems() { }
   function renderSearchCard(course) {
     var extraBtns = '';
     if (course.extraSearchUrls && course.extraSearchUrls.length > 0) {
       extraBtns = '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">' +
         course.extraSearchUrls.map(function (ex) {
           return '<a href="' + ex.url + '" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:12px;padding:4px 10px;"><i class="fas fa-search"></i> ' + escapeHtml(ex.label) + '</a>';
-        }).join('') +
-        '</div>';
+        }).join('') + '</div>';
     }
-    return '<div class="video-card">' +
-      '<div class="video-embed-wrapper video-placeholder">' +
-      '<i class="fas fa-search"></i>' +
-      '<span>在B站查找更多视频</span>' +
-      '</div>' +
-      '<div class="video-card-body">' +
-      '<h4>查找更多「' + course.title + '」视频</h4>' +
-      '<p>点击下方按钮在B站搜索相关课程视频,获取最新更新内容。</p>' +
-      extraBtns +
-      '<div class="video-card-footer">' +
-      '<a href="' + course.searchUrl + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> 在B站查找</a>' +
-      '</div>' +
-      '</div>' +
-      '</div>';
+    return '<div class="video-card"><div class="video-embed-wrapper video-placeholder"><i class="fas fa-search"></i><span>在B站查找更多视频</span></div>' +
+      '<div class="video-card-body"><h4>查找更多「' + course.title + '」视频</h4>' +
+      '<p>点击下方按钮在B站搜索相关课程视频。</p>' + extraBtns +
+      '<div class="video-card-footer"><a href="' + course.searchUrl + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> 在B站查找</a></div>' +
+      '</div></div>';
   }
 
   // ===== 笔记页面(登录后可编辑) =====

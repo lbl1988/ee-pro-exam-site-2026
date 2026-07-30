@@ -1110,7 +1110,163 @@ a:hover {
   color: var(--accent);
 }
 
-/* ===== 完整播放列表(折叠) ===== */
+/* ===== 视频学科分组(393讲全量) ===== */
+.subject-overview {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 24px 28px;
+  background: linear-gradient(135deg, #1a5276, #2e86c1);
+  border-radius: var(--radius);
+  color: #fff;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  box-shadow: var(--shadow);
+}
+.subject-overview-stat {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.stat-big-num {
+  font-size: 40px;
+  font-weight: 800;
+  color: #fff;
+  line-height: 1;
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+.stat-label {
+  font-size: 13px;
+  opacity: 0.9;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* 学科Tab栏 */
+.subject-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 24px;
+  background: var(--bg-white);
+  padding: 10px;
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  position: sticky;
+  top: 70px;
+  z-index: 50;
+}
+.subject-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 14px;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  background: var(--bg-light);
+  color: var(--text-dark);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  white-space: nowrap;
+}
+.subject-tab:hover {
+  background: #eaf2f8;
+  transform: translateY(-1px);
+}
+.subject-tab.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(46, 134, 193, 0.35);
+}
+.subject-tab i {
+  font-size: 14px;
+}
+.subject-tab-count {
+  background: rgba(255,255,255,0.25);
+  color: inherit;
+  padding: 1px 9px;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 700;
+  font-family: Consolas, monospace;
+}
+.subject-tab:not(.active) .subject-tab-count {
+  background: var(--primary);
+  color: #fff;
+}
+
+/* 学科分组标题区 */
+.subject-section {
+  margin-bottom: 32px;
+}
+.subject-section-header {
+  padding: 14px 20px;
+  background: var(--bg-white);
+  border-radius: var(--radius);
+  margin-bottom: 18px;
+  box-shadow: var(--shadow);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.subject-section-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.subject-section-title i {
+  font-size: 22px;
+}
+.subject-section-count {
+  color: var(--text-gray);
+  font-size: 13px;
+  font-weight: 600;
+}
+.subject-section-count i {
+  color: var(--primary);
+  margin-right: 4px;
+}
+
+/* 视频卡片:序号徽标+教师徽章 */
+.video-card-seq {
+  font-size: 12px;
+  color: var(--text-gray);
+  margin-bottom: 6px;
+  font-weight: 500;
+}
+.video-card-seq strong {
+  color: var(--primary);
+  font-family: Consolas, monospace;
+  font-size: 14px;
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.6;
+  margin-right: 4px;
+}
+.badge-teacher {
+  background: #eaf2f8;
+  color: #1a5276;
+}
+.badge-teacher i {
+  margin-right: 3px;
+  opacity: 0.85;
+}
+
+/* ===== 完整播放列表(折叠) - 保留兼容 ===== */
 .playlist-wrapper {
   margin-top: 20px;
   background: var(--bg-white);
@@ -1255,6 +1411,34 @@ a:hover {
 
   .navbar-nav a {
     padding: 12px 16px;
+  }
+
+  /* 视频学科分组响应式 */
+  .subject-overview {
+    padding: 18px;
+    gap: 14px;
+  }
+  .stat-big-num {
+    font-size: 30px;
+  }
+  .subject-tabs {
+    position: static;
+    padding: 8px;
+    gap: 6px;
+  }
+  .subject-tab {
+    padding: 6px 10px;
+    font-size: 12px;
+    gap: 5px;
+  }
+  .subject-tab i {
+    font-size: 12px;
+  }
+  .subject-section-header {
+    padding: 12px 14px;
+  }
+  .subject-section-title {
+    font-size: 17px;
   }
 
   .hero {
