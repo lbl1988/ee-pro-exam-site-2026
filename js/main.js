@@ -125,7 +125,7 @@
       { icon: 'fas fa-book-open', title: '基础知识', desc: '系统梳理公共基础与专业基础知识体系,涵盖高等数学、电路、电气工程基础等全部考试科目。', link: 'basic.html', btnText: '查看知识体系' },
       { icon: 'fas fa-fire', title: '高频考点', desc: '精选历年高频考点与公式速记,标注考频星级,帮助高效复习,直击考试重点。', link: 'hot-points.html', btnText: '查看高频考点' },
       { icon: 'fas fa-video', title: '视频直播', desc: 'B站视频课程集合:姜小白公共基础精讲、工控圈专业精讲、大熊冲刺课、电教中心全18讲、历年真题讲解。', link: 'videos.html', btnText: '观看视频' },
-      { icon: 'fas fa-pencil-alt', title: '学习笔记', desc: '整理各科目学习笔记与知识总结,登录后可自定义笔记,方便随时查阅复习。', link: 'notes.html', btnText: '查看笔记' },
+      { icon: 'fas fa-pencil-alt', title: '学习笔记', desc: '整理各科目学习笔记与知识总结,登录后可自定义笔记,方便随时查阅复习。', link: 'my-notes.html', btnText: '查看笔记' },
       { icon: 'fas fa-users', title: '学友分享', desc: '学友备考经验分享、资料交流、问答互助,共同进步,一起通关。', link: 'share.html', btnText: '查看分享' }
     ];
 

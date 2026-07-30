@@ -4,6 +4,8 @@ services:
     buildCommand: echo "No build needed for static site"
     staticPublishPath: ./
     pullRequestPreviewsEnabled: false
+    # Render默认cleanUrls: true - 自动剥离.html后缀(/basic可访问/basic.html)
+    cleanUrls: true
     headers:
       - path: /*
         name: X-Content-Type-Options
