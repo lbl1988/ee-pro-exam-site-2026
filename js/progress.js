@@ -133,7 +133,14 @@
         if (vids[k].episodes) {
           vids[k].episodes.forEach(function (ep) {
             videoTotal++;
-            if (data.videos[ep.bv]) videoDone++;
+            // 兼容两种key格式:老格式仅bv号,新格式bv@p
+            var bv = ep.bv || vids[k].bvid || '';
+            var page = ep.page || 1;
+            var newKey = String(bv) + '@p' + String(page);
+            var oldKey = ep.bv;
+            if (data.videos[newKey] || (oldKey && data.videos[oldKey])) {
+              videoDone++;
+            }
           });
         }
       }

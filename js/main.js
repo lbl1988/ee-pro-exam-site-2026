@@ -322,7 +322,7 @@
       const order = ['jiangxiaobai', 'gongkongquan', 'daxiong', 'dianjiaozhongxin', 'zhenti'];
 
       let html = '';
-      order.forEach(function (key) {
+      order.forEach(function (key, idx) {
         const course = videos[key];
         if (!course) return;
         html += '<div class="video-category">';
@@ -333,7 +333,12 @@
           course.episodes.forEach(function (ep) { html += renderVideoCard(ep, course); });
         }
         html += renderSearchCard(course);
-        html += '</div></div>';
+        html += '</div>';
+        // 完整播放列表 (折叠)
+        if (course.playlist && course.playlist.length > 0) {
+          html += renderPlaylist(course, key, idx);
+        }
+        html += '</div>';
       });
 
       container.innerHTML = html;
@@ -341,6 +346,8 @@
       if (dirLabelEl) dirLabelEl.textContent = dirLabel;
       bindMarkButtons(container);
       applyMarkedCardStyle(container);
+      bindPlaylistToggles(container);
+      bindPlaylistItems(container);
     }
 
     render();
@@ -348,24 +355,101 @@
     document.addEventListener('authChanged', render);
   }
 
+  // 构建视频唯一key (BV号 + 分p)，确保不同分p能独立标记
+  function buildVideoKey(bv, page) {
+    return String(bv || '') + '@p' + String(page || 1);
+  }
+
+  // 解析ep和course,返回{bv,page,key}
+  function resolveVideoRef(ep, course) {
+    var bv = ep.bv || (course ? course.bvid : '');
+    var page = ep.page || 1;
+    return {
+      bv: bv,
+      page: page,
+      key: buildVideoKey(bv, page)
+    };
+  }
+
   function renderVideoCard(ep, course) {
-    var marked = isLoggedIn() && window.EEProgress.isVideoMarked(ep.bv);
+    var ref = resolveVideoRef(ep, course);
+    var marked = isLoggedIn() && window.EEProgress.isVideoMarked(ref.key);
     return '<div class="video-card' + (marked ? ' marked' : '') + '">' +
       '<div class="video-embed-wrapper">' +
-      '<iframe src="' + getBiliEmbedUrl(ep.bv) + '" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>' +
+      '<iframe src="' + getBiliEmbedUrl(ref.bv, ref.page) + '" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>' +
       '</div>' +
       '<div class="video-card-body">' +
       '<h4>' + ep.title + '</h4>' +
       '<p>' + (ep.desc || '') + '</p>' +
       '<div class="video-card-footer">' +
-      '<a href="' + getBiliVideoUrl(ep.bv) + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> B站观看</a>' +
-      buildMarkButton('video', ep.bv, marked) +
+      '<a href="' + getBiliVideoUrl(ref.bv, ref.page) + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> B站观看</a>' +
+      buildMarkButton('video', ref.key, marked) +
       '</div>' +
       '</div>' +
       '</div>';
   }
 
+  // 完整播放列表折叠区
+  function renderPlaylist(course, courseKey, idx) {
+    var total = course.playlist.length;
+    var collapseId = 'playlist-collapse-' + idx;
+    var html = '<div class="playlist-wrapper">';
+    html += '<button class="playlist-toggle" data-target="' + collapseId + '">';
+    html += '<i class="fas fa-list-ul"></i> 查看完整播放列表 <span class="playlist-count">(' + total + '讲)</span>';
+    html += '<i class="fas fa-chevron-down playlist-arrow"></i>';
+    html += '</button>';
+    html += '<div id="' + collapseId + '" class="playlist-collapse">';
+    html += '<ul class="playlist-list">';
+    course.playlist.forEach(function (item, i) {
+      var bv = item.bv || course.bvid;
+      var page = item.p || 1;
+      var key = buildVideoKey(bv, page);
+      var href = getBiliVideoUrl(bv, page);
+      html += '<li class="playlist-item" data-bv="' + escapeAttr(bv) + '" data-page="' + page + '" data-href="' + escapeAttr(href) + '">';
+      html += '<span class="playlist-index">' + (i + 1) + '</span>';
+      html += '<span class="playlist-title">' + escapeHtml(item.t) + '</span>';
+      html += '<span class="playlist-page">P' + page + '</span>';
+      html += '</li>';
+    });
+    html += '</ul></div></div>';
+    return html;
+  }
+
+  // 绑定播放列表展开/折叠
+  function bindPlaylistToggles(container) {
+    if (!container) container = document;
+    container.querySelectorAll('.playlist-toggle').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var targetId = btn.dataset.target;
+        var target = document.getElementById(targetId);
+        if (!target) return;
+        var expanded = target.classList.toggle('show');
+        var arrow = btn.querySelector('.playlist-arrow');
+        if (arrow) arrow.style.transform = expanded ? 'rotate(180deg)' : '';
+      });
+    });
+  }
+
+  // 绑定播放列表项点击:跳转到B站新窗口
+  function bindPlaylistItems(container) {
+    if (!container) container = document;
+    container.querySelectorAll('.playlist-item').forEach(function (li) {
+      li.addEventListener('click', function () {
+        var href = li.dataset.href;
+        if (href) window.open(href, '_blank', 'noopener');
+      });
+    });
+  }
+
   function renderSearchCard(course) {
+    var extraBtns = '';
+    if (course.extraSearchUrls && course.extraSearchUrls.length > 0) {
+      extraBtns = '<div style="margin-top:8px;display:flex;flex-wrap:wrap;gap:6px;">' +
+        course.extraSearchUrls.map(function (ex) {
+          return '<a href="' + ex.url + '" target="_blank" rel="noopener" class="btn btn-outline" style="font-size:12px;padding:4px 10px;"><i class="fas fa-search"></i> ' + escapeHtml(ex.label) + '</a>';
+        }).join('') +
+        '</div>';
+    }
     return '<div class="video-card">' +
       '<div class="video-embed-wrapper video-placeholder">' +
       '<i class="fas fa-search"></i>' +
@@ -374,6 +458,7 @@
       '<div class="video-card-body">' +
       '<h4>查找更多「' + course.title + '」视频</h4>' +
       '<p>点击下方按钮在B站搜索相关课程视频,获取最新更新内容。</p>' +
+      extraBtns +
       '<div class="video-card-footer">' +
       '<a href="' + course.searchUrl + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> 在B站查找</a>' +
       '</div>' +
