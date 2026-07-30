@@ -1,14 +1,9 @@
 services:
-  - type: web
+  - type: static_site
     name: ee-pro-exam-site-2026
-    runtime: static
     buildCommand: echo "No build needed for static site"
     staticPublishPath: ./
     pullRequestPreviewsEnabled: false
-    routes:
-      - type: rewrite
-        source: /*
-        destination: /index.html
     headers:
       - path: /*
         name: X-Content-Type-Options
@@ -16,6 +11,3 @@ services:
       - path: /*
         name: X-Frame-Options
         value: ALLOWALL
-    envVars:
-      - key: NODE_VERSION
-        value: 18.0.0
