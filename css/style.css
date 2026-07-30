@@ -741,6 +741,375 @@ a:hover {
   font-size: 16px;
 }
 
+/* ===== 用户认证UI ===== */
+.btn-login {
+  background: var(--accent-orange);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-login:hover {
+  background: #e08e0b;
+}
+
+.user-greeting {
+  font-size: 14px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-logout {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: none;
+  padding: 6px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.btn-logout:hover {
+  background: rgba(231, 76, 60, 0.7);
+}
+
+/* 弹窗遮罩 */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  z-index: 2000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.modal-overlay.show {
+  display: flex;
+}
+
+.modal-box {
+  background: #fff;
+  border-radius: 12px;
+  padding: 32px;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+  animation: modalIn 0.25s ease;
+}
+
+@keyframes modalIn {
+  from { transform: translateY(-20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 28px;
+  color: var(--text-light);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.modal-close:hover {
+  color: var(--accent);
+}
+
+.auth-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-light);
+  padding: 4px;
+  border-radius: 8px;
+  margin-bottom: 24px;
+}
+
+.auth-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: transparent;
+  border-radius: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-gray);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.auth-tab.active {
+  background: var(--primary);
+  color: #fff;
+}
+
+.auth-form .form-group {
+  margin-bottom: 16px;
+}
+
+.auth-form label {
+  display: block;
+  font-size: 14px;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+
+.auth-form input,
+.note-form input,
+.note-form textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 15px;
+  font-family: inherit;
+  transition: var(--transition);
+}
+
+.auth-form input:focus,
+.note-form input:focus,
+.note-form textarea:focus {
+  outline: none;
+  border-color: var(--primary-light);
+  box-shadow: 0 0 0 3px rgba(46, 134, 193, 0.1);
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: 8px;
+}
+
+.auth-message {
+  margin-top: 12px;
+  font-size: 14px;
+  text-align: center;
+  min-height: 20px;
+}
+
+.auth-message.error {
+  color: var(--accent);
+}
+
+.auth-message.success {
+  color: #27ae60;
+}
+
+.auth-hint {
+  margin-top: 16px;
+  font-size: 12px;
+  color: var(--text-light);
+  text-align: center;
+}
+
+/* ===== 学习进度统计板块 ===== */
+.progress-dashboard {
+  background: var(--bg-white);
+  border-radius: var(--radius);
+  padding: 28px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow);
+}
+
+.progress-dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 24px;
+}
+
+.progress-dashboard-header h2 {
+  font-size: 22px;
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.progress-dashboard-header h2 i {
+  color: var(--accent-orange);
+}
+
+.progress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+}
+
+.progress-item {
+  text-align: center;
+  padding: 16px;
+  background: var(--bg-light);
+  border-radius: 8px;
+}
+
+.progress-item-title {
+  font-size: 14px;
+  color: var(--text-gray);
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.progress-bar-wrapper {
+  width: 100%;
+  height: 12px;
+  background: #d5dbdb;
+  border-radius: 6px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--primary-light), var(--primary));
+  border-radius: 6px;
+  transition: width 0.5s ease;
+  width: 0;
+}
+
+.progress-percent {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.progress-detail {
+  font-size: 13px;
+  color: var(--text-light);
+  margin-top: 4px;
+}
+
+/* 未登录提示 */
+.login-prompt {
+  text-align: center;
+  padding: 32px 20px;
+  background: var(--bg-light);
+  border-radius: var(--radius);
+  border: 2px dashed var(--border);
+}
+
+.login-prompt i {
+  font-size: 48px;
+  color: var(--text-light);
+  margin-bottom: 12px;
+}
+
+.login-prompt h3 {
+  font-size: 20px;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.login-prompt p {
+  color: var(--text-gray);
+  margin-bottom: 16px;
+}
+
+/* ===== 标记掌握按钮 ===== */
+.mark-btn {
+  border: none;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mark-btn.marked {
+  background: #27ae60;
+  color: #fff;
+}
+
+.mark-btn.unmarked {
+  background: var(--bg-light);
+  color: var(--text-gray);
+  border: 1px solid var(--border);
+}
+
+.mark-btn.unmarked:hover {
+  background: #eaf2f8;
+  color: var(--primary);
+}
+
+.subject-card.marked,
+.point-card.marked,
+.video-card.marked {
+  border-left-color: #27ae60;
+}
+
+/* ===== 笔记表单 ===== */
+.note-form {
+  background: var(--bg-light);
+  padding: 20px;
+  border-radius: var(--radius);
+  margin-bottom: 24px;
+}
+
+.note-form h3 {
+  font-size: 18px;
+  color: var(--primary-dark);
+  margin-bottom: 14px;
+}
+
+.note-form textarea {
+  min-height: 120px;
+  resize: vertical;
+  margin-bottom: 12px;
+}
+
+.note-form .form-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.note-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.note-actions button {
+  background: none;
+  border: 1px solid var(--border);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  color: var(--text-gray);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.note-actions button:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.note-actions .btn-delete:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ===== 响应式 ===== */
 @media (max-width: 768px) {
   .navbar-toggle {
