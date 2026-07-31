@@ -126,22 +126,30 @@
       }
     }
 
-    if (typeof VIDEOS !== 'undefined') {
+    // 视频统计:基于视频页实际展示的全部视频卡片(COURSE_CARDS)
+    // 覆盖5大类×所有学科×完整playlist,与页面标记完全一致
+    if (typeof COURSE_CARDS !== 'undefined') {
       var dirKey3 = window.EEUtils ? window.EEUtils.getDirectionKey() : 'powerDistribution';
-      var vids = VIDEOS[dirKey3];
-      for (var k in vids) {
-        if (vids[k].episodes) {
-          vids[k].episodes.forEach(function (ep) {
-            videoTotal++;
-            // 兼容两种key格式:老格式仅bv号,新格式bv@p
-            var bv = ep.bv || vids[k].bvid || '';
-            var page = ep.page || 1;
-            var newKey = String(bv) + '@p' + String(page);
-            var oldKey = ep.bv;
-            if (data.videos[newKey] || (oldKey && data.videos[oldKey])) {
-              videoDone++;
-            }
-          });
+      var dirCards = COURSE_CARDS[dirKey3];
+      if (dirCards) {
+        for (var catKey in dirCards) {
+          if (!dirCards.hasOwnProperty(catKey)) continue;
+          var catSubjects = dirCards[catKey];
+          if (!catSubjects) continue;
+          for (var subjKey in catSubjects) {
+            if (!catSubjects.hasOwnProperty(subjKey)) continue;
+            var cards = catSubjects[subjKey];
+            if (!cards || !cards.length) continue;
+            cards.forEach(function (card) {
+              videoTotal++;
+              var bv = card.bv;
+              var page = card.page || 1;
+              var vkey = String(bv) + '@p' + String(page);
+              if (data.videos[vkey]) {
+                videoDone++;
+              }
+            });
+          }
         }
       }
     }
