@@ -560,6 +560,149 @@ a:hover {
   border: none;
 }
 
+/* 视频卡片上的放大按钮(悬浮于播放器右上角) */
+.video-enlarge-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.55);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  opacity: 0;
+  transition: var(--transition);
+  backdrop-filter: blur(4px);
+}
+.video-card:hover .video-enlarge-btn {
+  opacity: 1;
+}
+.video-enlarge-btn:hover {
+  background: var(--accent);
+  transform: scale(1.1);
+}
+
+/* ===== 视频放大观看模态框 ===== */
+.video-enlarger-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0,0,0.85);
+  z-index: 3000;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+.video-enlarger-overlay.show {
+  display: flex;
+}
+.video-enlarger-box {
+  width: 100%;
+  max-width: 1100px;
+  background: #1a1a1a;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  animation: enlargerIn 0.3s ease;
+}
+@keyframes enlargerIn {
+  from { transform: scale(0.95); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+.video-enlarger-close {
+  position: absolute;
+  top: 24px;
+  right: 32px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  border: none;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  font-size: 28px;
+  line-height: 1;
+  cursor: pointer;
+  z-index: 3100;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.video-enlarger-close:hover {
+  background: var(--accent);
+  transform: rotate(90deg);
+}
+.video-enlarger-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  background: linear-gradient(135deg, #1a5276, #2e86c1);
+  color: #fff;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.video-enlarger-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+  flex: 1;
+  min-width: 200px;
+}
+.video-enlarger-player {
+  position: relative;
+  width: 100%;
+  padding-top: 56.25%;
+  background: #000;
+}
+.video-enlarger-player iframe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+.video-enlarger-footer {
+  padding: 14px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: #222;
+  color: #fff;
+}
+.video-enlarger-footer .badge-teacher {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  font-size: 13px;
+  padding: 4px 12px;
+}
+.enlarger-hint {
+  font-size: 12px;
+  color: rgba(255,255,255,0.65);
+}
+.enlarger-hint i {
+  margin-right: 4px;
+}
+@media (max-width: 768px) {
+  .video-enlarger-overlay { padding: 12px; }
+  .video-enlarger-close { top: 16px; right: 20px; width: 38px; height: 38px; font-size: 24px; }
+  .video-enlarger-header { padding: 12px 16px; }
+  .video-enlarger-header h3 { font-size: 15px; }
+  .video-enlarger-footer { padding: 10px 16px; flex-direction: column; align-items: flex-start; gap: 6px; }
+  .video-enlarge-btn { opacity: 1; } /* 移动端始终可见,因为没有hover */
+}
+
 .video-card-body {
   padding: 16px 20px;
   flex-grow: 1;
@@ -916,6 +1059,40 @@ a:hover {
   font-size: 12px;
   color: var(--text-light);
   text-align: center;
+}
+
+/* 修改密码弹窗标题 */
+.pwd-modal-title {
+  margin: 0 0 20px;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--primary-dark);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.pwd-modal-title i {
+  color: var(--accent-orange);
+}
+
+/* 顶部用户区按钮:修改密码 */
+.btn-pwd {
+  background: rgba(255, 255, 255, 0.15);
+  border: none;
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: var(--transition);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+}
+.btn-pwd:hover {
+  background: var(--accent-orange);
+  transform: rotate(15deg);
 }
 
 /* ===== 学习进度统计板块 ===== */

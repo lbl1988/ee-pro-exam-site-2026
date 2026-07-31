@@ -486,6 +486,19 @@
       applyMarkedCardStyle(container);
       bindCategoryTabs(container);
       bindSubjectTabs(container);
+      bindEnlargeButtons(container);
+    }
+
+    function bindEnlargeButtons(scope) {
+      if (!scope) scope = document;
+      scope.querySelectorAll('[data-bv]').forEach(function (btn) {
+        if (btn.dataset.enlargeBound) return;
+        btn.dataset.enlargeBound = '1';
+        btn.addEventListener('click', function (e) {
+          e.preventDefault();
+          openVideoEnlarger(btn.dataset.bv, btn.dataset.page, btn.dataset.title, btn.dataset.teacher);
+        });
+      });
     }
 
     function bindCategoryTabs(scope) {
@@ -534,6 +547,65 @@
     document.addEventListener('authChanged', render);
   }
 
+  // ===== 视频放大观看模态框(全屏内嵌播放器) =====
+  var enlargerModal = null;
+  function ensureEnlargerModal() {
+    if (enlargerModal) return enlargerModal;
+    enlargerModal = document.createElement('div');
+    enlargerModal.id = 'video-enlarger';
+    enlargerModal.className = 'video-enlarger-overlay';
+    enlargerModal.innerHTML =
+      '<button class="video-enlarger-close" id="enlarger-close" aria-label="关闭">&times;</button>' +
+      '<div class="video-enlarger-box">' +
+      '<div class="video-enlarger-header">' +
+      '<h3 id="enlarger-title"></h3>' +
+      '<a id="enlarger-bili-link" href="#" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> 在B站打开</a>' +
+      '</div>' +
+      '<div class="video-enlarger-player">' +
+      '<iframe id="enlarger-iframe" src="" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>' +
+      '</div>' +
+      '<div class="video-enlarger-footer">' +
+      '<span id="enlarger-teacher" class="badge badge-teacher"></span>' +
+      '<span class="enlarger-hint"><i class="fas fa-info-circle"></i> 按 ESC 键或点击空白处关闭</span>' +
+      '</div>' +
+      '</div>';
+    document.body.appendChild(enlargerModal);
+
+    document.getElementById('enlarger-close').addEventListener('click', closeEnlarger);
+    enlargerModal.addEventListener('click', function (e) {
+      if (e.target === enlargerModal) closeEnlarger();
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && enlargerModal.classList.contains('show')) closeEnlarger();
+    });
+    return enlargerModal;
+  }
+
+  function openVideoEnlarger(bv, page, title, teacher) {
+    var modal = ensureEnlargerModal();
+    page = page || 1;
+    document.getElementById('enlarger-title').textContent = title || ('BV' + bv + ' P' + page);
+    document.getElementById('enlarger-iframe').src = getBiliEmbedUrl(bv, page);
+    document.getElementById('enlarger-bili-link').href = getBiliVideoUrl(bv, page);
+    var teacherEl = document.getElementById('enlarger-teacher');
+    if (teacher) {
+      teacherEl.innerHTML = '<i class="fas fa-user-tie"></i> ' + teacher;
+      teacherEl.style.display = 'inline-block';
+    } else {
+      teacherEl.style.display = 'none';
+    }
+    modal.classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeEnlarger() {
+    if (!enlargerModal) return;
+    var iframe = document.getElementById('enlarger-iframe');
+    if (iframe) iframe.src = ''; // 停止播放
+    enlargerModal.classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
   // 构建视频唯一key (BV号 + 分p)，确保不同分p能独立标记
   function buildVideoKey(bv, page) {
     return String(bv || '') + '@p' + String(page || 1);
@@ -548,6 +620,7 @@
     return '<div class="video-card' + (marked ? ' marked' : '') + '">' +
       '<div class="video-embed-wrapper">' +
       '<iframe src="' + getBiliEmbedUrl(bv, page) + '" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>' +
+      '<button class="video-enlarge-btn" data-bv="' + bv + '" data-page="' + page + '" data-title="' + escapeAttr(card.title) + '" data-teacher="' + escapeAttr(card.teacher || '') + '" title="在学习平台放大观看"><i class="fas fa-expand"></i></button>' +
       '</div>' +
       '<div class="video-card-body">' +
       '<div class="video-card-seq">#<strong>' + (seq || 1) + '</strong></div>' +
@@ -558,6 +631,7 @@
       '</p>' +
       '<div class="video-card-footer">' +
       '<a href="' + getBiliVideoUrl(bv, page) + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> B站观看 P' + page + '</a>' +
+      '<button class="btn btn-outline video-enlarge-btn-text" data-bv="' + bv + '" data-page="' + page + '" data-title="' + escapeAttr(card.title) + '" data-teacher="' + escapeAttr(card.teacher || '') + '"><i class="fas fa-expand"></i> 放大观看</button>' +
       buildMarkButton('video', vkey, marked) +
       '</div>' +
       '</div>' +
