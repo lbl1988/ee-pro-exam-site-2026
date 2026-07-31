@@ -20,7 +20,8 @@
       basic: {},       // { 科目名: true }
       hotpoints: {},   // { 考点名: true }
       videos: {},      // { bv号: true }
-      notes: []        // [{id,title,content,date}]
+      notes: [],        // [{id,title,content,date}]
+      shares: []        // [{id,title,content,author,date,direction}]
     };
   }
 
@@ -96,6 +97,39 @@
         break;
       }
     }
+    saveProgress(data);
+    return true;
+  }
+
+  // 学友分享 CRUD(按用户隔离,存储在各自账号下)
+  function getShares() {
+    var data = getProgress();
+    return data ? (data.shares || []) : [];
+  }
+
+  function addShare(title, content, direction) {
+    var data = getProgress();
+    if (!data) return false;
+    if (!data.shares) data.shares = [];
+    var user = window.EEAuth ? window.EEAuth.getCurrentUser() : '匿名学友';
+    data.shares.unshift({
+      id: 's' + Date.now(),
+      title: title,
+      content: content,
+      author: user,
+      date: new Date().toISOString().slice(0, 10),
+      direction: direction || '通用',
+      views: 0
+    });
+    saveProgress(data);
+    return true;
+  }
+
+  function deleteShare(id) {
+    var data = getProgress();
+    if (!data) return false;
+    if (!data.shares) return false;
+    data.shares = data.shares.filter(function (s) { return s.id !== id; });
     saveProgress(data);
     return true;
   }
@@ -185,6 +219,9 @@
     addNote: addNote,
     deleteNote: deleteNote,
     updateNote: updateNote,
+    getShares: getShares,
+    addShare: addShare,
+    deleteShare: deleteShare,
     getStats: getStats,
     isBasicMarked: isBasicMarked,
     isHotPointMarked: isHotPointMarked,

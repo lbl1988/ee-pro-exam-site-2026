@@ -820,6 +820,139 @@ a:hover {
   line-height: 1.8;
 }
 
+/* ===== 学友分享页面增强 ===== */
+.share-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding: 16px 20px;
+  background: var(--bg-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  border-left: 4px solid var(--primary-light);
+}
+.share-stats {
+  display: flex;
+  gap: 24px;
+  flex-wrap: wrap;
+  font-size: 14px;
+  color: var(--text-gray);
+}
+.share-stats strong {
+  color: var(--accent);
+  font-size: 16px;
+  margin: 0 4px;
+}
+.share-stats i {
+  color: var(--primary-light);
+  margin-right: 4px;
+}
+
+.share-section-title {
+  font-size: 18px;
+  color: var(--primary-dark);
+  margin: 28px 0 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--primary-light);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.share-section-title i {
+  color: var(--accent-orange);
+}
+
+.share-card-mine {
+  border-left-color: var(--accent);
+  background: linear-gradient(to right, #fef9e7 0%, var(--bg-white) 8%);
+}
+.share-card-mine .share-card-header h4::before {
+  content: '我的 · ';
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+}
+.share-card-footer {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+  display: flex;
+  justify-content: flex-end;
+}
+.share-card-footer .btn {
+  padding: 5px 12px;
+  font-size: 13px;
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.share-card-footer .btn:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* 发布分享表单 */
+.share-form-card {
+  background: var(--bg-white);
+  border-radius: var(--radius);
+  padding: 24px 28px;
+  box-shadow: var(--shadow-hover);
+  border: 1px solid var(--border);
+}
+.share-form-card h4 {
+  font-size: 18px;
+  color: var(--primary-dark);
+  margin-bottom: 18px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.share-form-card h4 i {
+  color: var(--accent-orange);
+}
+.share-form-card .form-group {
+  margin-bottom: 16px;
+}
+.share-form-card label {
+  display: block;
+  font-size: 14px;
+  color: var(--text-dark);
+  margin-bottom: 6px;
+  font-weight: 600;
+}
+.share-form-card input[type="text"],
+.share-form-card select,
+.share-form-card textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: inherit;
+  transition: var(--transition);
+  background: var(--bg-light);
+}
+.share-form-card input:focus,
+.share-form-card select:focus,
+.share-form-card textarea:focus {
+  outline: none;
+  border-color: var(--primary-light);
+  background: #fff;
+  box-shadow: 0 0 0 3px rgba(46, 134, 193, 0.12);
+}
+.share-form-card textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+.share-form-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 8px;
+}
+
 /* ===== 统计信息 ===== */
 .stats-bar {
   display: flex;

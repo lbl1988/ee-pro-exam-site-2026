@@ -828,7 +828,7 @@
     const container = document.getElementById('share-content');
     if (!container) return;
 
-    const shares = [
+    const builtinShares = [
       { title: '一次通关供配电基础考试经验分享', author: '学长-阿强', date: '2025-12-18', direction: '供配电', views: 3200, content: '我是2025年一次通过供配电基础考试的,分享几点经验:1.公共基础一定要扎实,高数和物理占分多,不要放弃;2.专业基础电路和电气工程基础是重中之重;3.真题至少刷3遍;4.考前一个月做模拟卷控制时间。祝大家2026顺利通关!' },
       { title: '发输变电基础考试备考心得', author: '学友-阿梅', date: '2025-12-12', direction: '发输变电', views: 2100, content: '发输变电方向相对供配电考试人数少,但内容同样多。建议:1.电力系统分析(短路、稳定、潮流)是核心;2.标幺值计算是基础中的基础;3.内部过电压和绝缘配合是发输变电特色考点;4.工控圈的视频对理解专业概念很有帮助。' },
       { title: '工作党如何高效备考注电基础', author: '学友-小张', date: '2025-12-08', direction: '通用', views: 4500, content: '作为工作党,时间最宝贵。策略:1.利用碎片时间听姜小白公共基础音频;2.每天保证2小时集中学习;3.周末做套题;4.用艾宾浩斯遗忘曲线安排复习;5.加入学习群互相督促。坚持4-6个月,通关不是梦。' },
@@ -837,20 +837,187 @@
       { title: '考试当天注意事项', author: '学长-阿强', date: '2025-11-15', direction: '通用', views: 5200, content: '考试当天:1.带好准考证、身份证、计算器、2B铅笔、橡皮、黑色签字笔;2.上午公共基础(8:00-12:00,120题),下午专业基础(14:00-18:00,60题);3.每题平均2分钟,不会的先跳过;4.注意审题反向题。祝好运!' }
     ];
 
-    container.innerHTML = shares.map(function (s) {
-      return '<div class="share-card">' +
-        '<div class="share-card-header">' +
-        '<h4>' + s.title + '</h4>' +
-        '<div class="share-meta">' +
-        '<span><i class="far fa-user"></i>' + s.author + '</span>' +
-        '<span><i class="far fa-calendar"></i>' + s.date + '</span>' +
-        '<span class="note-tag">' + s.direction + '</span>' +
-        '<span><i class="far fa-eye"></i>' + s.views + '</span>' +
+    renderSharePage();
+
+    // 登录状态变化时重新渲染
+    document.addEventListener('authChanged', renderSharePage);
+
+    function renderSharePage() {
+      var userShares = isLoggedIn() ? window.EEProgress.getShares() : [];
+      var totalShares = builtinShares.length + userShares.length;
+
+      var html = '';
+      // 顶部统计 + 发布按钮
+      html += '<div class="share-toolbar">' +
+        '<div class="share-stats">' +
+        '<span><i class="fas fa-users"></i> 共 <strong>' + totalShares + '</strong> 篇分享</span>' +
+        '<span><i class="fas fa-user-edit"></i> 我的分享 <strong>' + userShares.length + '</strong> 篇</span>' +
         '</div>' +
-        '</div>' +
-        '<div class="share-content">' + s.content + '</div>' +
+        (isLoggedIn()
+          ? '<button class="btn btn-primary" id="btn-new-share"><i class="fas fa-plus"></i> 发布新分享</button>'
+          : '<button class="btn btn-outline" id="btn-new-share"><i class="fas fa-sign-in-alt"></i> 登录后发布分享</button>') +
         '</div>';
-    }).join('');
+
+      // 发布表单(默认隐藏)
+      if (isLoggedIn()) {
+        html += '<div class="share-form-wrapper" id="share-form-wrapper" style="display:none;">' +
+          '<div class="share-form-card">' +
+          '<h4><i class="fas fa-edit"></i> 发布新分享</h4>' +
+          '<div class="form-group">' +
+          '<label for="share-title">标题</label>' +
+          '<input type="text" id="share-title" placeholder="请输入分享标题(5-50字)" maxlength="50">' +
+          '</div>' +
+          '<div class="form-group">' +
+          '<label for="share-direction">适用方向</label>' +
+          '<select id="share-direction">' +
+          '<option value="通用">通用</option>' +
+          '<option value="供配电">供配电</option>' +
+          '<option value="发输变电">发输变电</option>' +
+          '</select>' +
+          '</div>' +
+          '<div class="form-group">' +
+          '<label for="share-content-input">内容</label>' +
+          '<textarea id="share-content-input" rows="6" placeholder="分享你的备考经验、学习方法、资料推荐等(10-1000字)..."></textarea>' +
+          '</div>' +
+          '<div class="share-form-actions">' +
+          '<button class="btn btn-primary" id="btn-submit-share"><i class="fas fa-paper-plane"></i> 发布</button>' +
+          '<button class="btn btn-outline" id="btn-cancel-share">取消</button>' +
+          '</div>' +
+          '<p class="auth-message" id="share-message"></p>' +
+          '</div>' +
+          '</div>';
+      }
+
+      // 我的分享(用户已发布的)
+      if (isLoggedIn() && userShares.length > 0) {
+        html += '<h3 class="share-section-title"><i class="fas fa-user-edit"></i> 我的分享(' + userShares.length + '篇)</h3>';
+        html += userShares.map(function (s) {
+          return renderShareCard(s, true);
+        }).join('');
+      }
+
+      // 精选分享(内置)
+      html += '<h3 class="share-section-title"><i class="fas fa-star"></i> 精选分享</h3>';
+      html += builtinShares.map(function (s) {
+        return renderShareCard(s, false);
+      }).join('');
+
+      container.innerHTML = html;
+
+      bindShareEvents();
+    }
+
+    function renderShareCard(s, isMine) {
+      return '<div class="share-card' + (isMine ? ' share-card-mine' : '') + '">' +
+        '<div class="share-card-header">' +
+        '<h4>' + escapeHtml(s.title) + '</h4>' +
+        '<div class="share-meta">' +
+        '<span><i class="far fa-user"></i>' + escapeHtml(s.author) + '</span>' +
+        '<span><i class="far fa-calendar"></i>' + s.date + '</span>' +
+        '<span class="note-tag">' + escapeHtml(s.direction) + '</span>' +
+        (s.views != null ? '<span><i class="far fa-eye"></i>' + s.views + '</span>' : '') +
+        '</div>' +
+        '</div>' +
+        '<div class="share-content">' + escapeHtml(s.content) + '</div>' +
+        (isMine ? '<div class="share-card-footer"><button class="btn btn-outline btn-delete-share" data-share-id="' + s.id + '"><i class="fas fa-trash"></i> 删除</button></div>' : '') +
+        '</div>';
+    }
+
+    function bindShareEvents() {
+      var btnNew = document.getElementById('btn-new-share');
+      var formWrapper = document.getElementById('share-form-wrapper');
+      var btnSubmit = document.getElementById('btn-submit-share');
+      var btnCancel = document.getElementById('btn-cancel-share');
+
+      if (btnNew) {
+        btnNew.addEventListener('click', function () {
+          if (!isLoggedIn()) { requireLoginToast(); return; }
+          if (formWrapper) {
+            formWrapper.style.display = 'block';
+            formWrapper.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            var titleInput = document.getElementById('share-title');
+            if (titleInput) titleInput.focus();
+          }
+        });
+      }
+
+      if (btnCancel) {
+        btnCancel.addEventListener('click', function () {
+          if (formWrapper) formWrapper.style.display = 'none';
+          clearForm();
+        });
+      }
+
+      if (btnSubmit) {
+        btnSubmit.addEventListener('click', submitShare);
+      }
+    }
+
+    function submitShare() {
+      if (!isLoggedIn()) { requireLoginToast(); return; }
+      var title = (document.getElementById('share-title').value || '').trim();
+      var content = (document.getElementById('share-content-input').value || '').trim();
+      var direction = document.getElementById('share-direction').value;
+      var msgEl = document.getElementById('share-message');
+
+      if (title.length < 5) {
+        showShareMsg('标题至少5个字符', false);
+        return;
+      }
+      if (title.length > 50) {
+        showShareMsg('标题不超过50个字符', false);
+        return;
+      }
+      if (content.length < 10) {
+        showShareMsg('内容至少10个字符', false);
+        return;
+      }
+      if (content.length > 1000) {
+        showShareMsg('内容不超过1000个字符', false);
+        return;
+      }
+
+      var ok = window.EEProgress.addShare(title, content, direction);
+      if (ok) {
+        showShareMsg('分享发布成功!', true);
+        setTimeout(function () {
+          renderSharePage();
+        }, 800);
+      } else {
+        showShareMsg('发布失败,请重试', false);
+      }
+    }
+
+    function showShareMsg(text, success) {
+      var msgEl = document.getElementById('share-message');
+      if (!msgEl) return;
+      msgEl.textContent = text;
+      msgEl.className = 'auth-message ' + (success ? 'success' : 'error');
+    }
+
+    function clearForm() {
+      var t = document.getElementById('share-title');
+      var c = document.getElementById('share-content-input');
+      var m = document.getElementById('share-message');
+      if (t) t.value = '';
+      if (c) c.value = '';
+      if (m) { m.textContent = ''; m.className = 'auth-message'; }
+    }
+
+    // 删除分享(事件委托)
+    container.addEventListener('click', function (e) {
+      var delBtn = e.target.closest('.btn-delete-share');
+      if (!delBtn) return;
+      var id = delBtn.dataset.shareId;
+      if (!id) return;
+      if (!confirm('确定删除这篇分享吗?')) return;
+      var ok = window.EEProgress.deleteShare(id);
+      if (ok) {
+        renderSharePage();
+      } else {
+        alert('删除失败,请重试');
+      }
+    });
   }
 
   // ===== 给已标记卡片加样式 =====
