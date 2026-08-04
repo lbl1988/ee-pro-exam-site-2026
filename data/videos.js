@@ -1320,12 +1320,20 @@ function isMobileDevice() {
   return /Android|iPhone|iPod|Mobile|Windows Phone|BlackBerry|Opera Mini|IEMobile/i.test(ua);
 }
 
-// B站嵌入:支持分p参数page
-// 注意:移动端手机浏览器内嵌B站player.html时分P定位不可靠,移动端应改用getBiliVideoUrl跳转播放
+// B站嵌入:支持分p参数page,移动端使用html5mobileplayer专用播放器
+// 原因:标准player.html在真实手机浏览器分P定位失效(始终播放P1),html5mobileplayer.html可正确定位分P
 function getBiliEmbedUrl(bv, page) {
   page = page || 1;
   var cid = getBiliCid(bv, page);
-  var url = 'https://player.bilibili.com/player.html?bvid=' + bv + '&page=' + page;
+  var base;
+  if (typeof isMobileDevice === 'function' && isMobileDevice()) {
+    // 移动端:专用播放器,分P定位可靠
+    base = 'https://www.bilibili.com/blackboard/html5mobileplayer.html?';
+  } else {
+    // 桌面端:标准播放器
+    base = 'https://player.bilibili.com/player.html?';
+  }
+  var url = base + 'bvid=' + bv + '&page=' + page;
   if (cid) url += '&cid=' + cid;
   url += '&high_quality=1&autoplay=0';
   return url;

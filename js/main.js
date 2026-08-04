@@ -617,34 +617,11 @@
     var page = card.page || 1;
     var vkey = buildVideoKey(bv, page);
     var marked = isLoggedIn() && window.EEProgress.isVideoMarked(vkey);
-    var isMobile = typeof isMobileDevice === 'function' && isMobileDevice();
-    var mediaHtml;
-    if (isMobile) {
-      // 移动端:不渲染iframe(B站player.html在手机浏览器分P定位不可靠,始终播放P1)
-      // 改为封面卡片,点击直接跳转B站播放对应分P
-      mediaHtml = '<div class="video-embed-wrapper video-mobile-cover">' +
-        '<a href="' + getBiliVideoUrl(bv, page) + '" target="_blank" rel="noopener" class="video-mobile-play-link">' +
-        '<i class="fas fa-play-circle"></i>' +
-        '<span>P' + page + ' · 点击播放</span>' +
-        '</a>' +
-        '</div>';
-    } else {
-      // 桌面端:iframe内嵌播放器,支持分P
-      mediaHtml = '<div class="video-embed-wrapper">' +
-        '<iframe src="' + getBiliEmbedUrl(bv, page) + '" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>' +
-        '<button class="video-enlarge-btn" data-bv="' + bv + '" data-page="' + page + '" data-title="' + escapeAttr(card.title) + '" data-teacher="' + escapeAttr(card.teacher || '') + '" title="在学习平台放大观看"><i class="fas fa-expand"></i></button>' +
-        '</div>';
-    }
-    var footerBtns;
-    if (isMobile) {
-      // 移动端:隐藏"放大观看"(也是iframe,手机不可靠),只保留B站观看
-      footerBtns = '<a href="' + getBiliVideoUrl(bv, page) + '" target="_blank" rel="noopener" class="btn btn-bili btn-block-mobile"><i class="fab fa-bilibili"></i> 在B站播放 P' + page + '</a>';
-    } else {
-      footerBtns = '<a href="' + getBiliVideoUrl(bv, page) + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> B站观看 P' + page + '</a>' +
-        '<button class="btn btn-outline video-enlarge-btn-text" data-bv="' + bv + '" data-page="' + page + '" data-title="' + escapeAttr(card.title) + '" data-teacher="' + escapeAttr(card.teacher || '') + '"><i class="fas fa-expand"></i> 放大观看</button>';
-    }
     return '<div class="video-card' + (marked ? ' marked' : '') + '">' +
-      mediaHtml +
+      '<div class="video-embed-wrapper">' +
+      '<iframe src="' + getBiliEmbedUrl(bv, page) + '" scrolling="no" border="0" frameborder="no" framespacing="0" allowfullscreen="true" sandbox="allow-scripts allow-same-origin allow-popups"></iframe>' +
+      '<button class="video-enlarge-btn" data-bv="' + bv + '" data-page="' + page + '" data-title="' + escapeAttr(card.title) + '" data-teacher="' + escapeAttr(card.teacher || '') + '" title="在学习平台放大观看"><i class="fas fa-expand"></i></button>' +
+      '</div>' +
       '<div class="video-card-body">' +
       '<div class="video-card-seq">#<strong>' + (seq || 1) + '</strong></div>' +
       '<h4>' + escapeHtml(card.title) + '</h4>' +
@@ -653,7 +630,8 @@
       (card.desc ? escapeHtml(card.desc) : '') +
       '</p>' +
       '<div class="video-card-footer">' +
-      footerBtns +
+      '<a href="' + getBiliVideoUrl(bv, page) + '" target="_blank" rel="noopener" class="btn btn-bili"><i class="fab fa-bilibili"></i> B站观看 P' + page + '</a>' +
+      '<button class="btn btn-outline video-enlarge-btn-text" data-bv="' + bv + '" data-page="' + page + '" data-title="' + escapeAttr(card.title) + '" data-teacher="' + escapeAttr(card.teacher || '') + '"><i class="fas fa-expand"></i> 放大观看</button>' +
       buildMarkButton('video', vkey, marked) +
       '</div>' +
       '</div>' +
