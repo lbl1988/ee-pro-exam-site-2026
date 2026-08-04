@@ -1309,8 +1309,19 @@ function getBiliVideoUrl(bv, page) {
   page = page || 1;
   return 'https://www.bilibili.com/video/' + bv + '?p=' + page;
 }
-// B站嵌入:支持分p参数page,移动端直接内嵌播放
-// 注意:移动端B站播放器page参数不生效,必须传cid才能定位到正确的分P,否则始终播放P1
+// 检测移动端(手机),用于决定是否渲染iframe
+// 原因:手机浏览器内嵌B站player.html时分P定位不可靠(page/cid参数在真实手机UA下不生效,始终播放P1)
+function isMobileDevice() {
+  if (typeof navigator === 'undefined') return false;
+  var ua = navigator.userAgent || '';
+  // 排除iPad(屏幕大,按桌面处理)和大屏平板
+  var isIPad = /iPad/.test(ua);
+  if (isIPad) return false;
+  return /Android|iPhone|iPod|Mobile|Windows Phone|BlackBerry|Opera Mini|IEMobile/i.test(ua);
+}
+
+// B站嵌入:支持分p参数page
+// 注意:移动端手机浏览器内嵌B站player.html时分P定位不可靠,移动端应改用getBiliVideoUrl跳转播放
 function getBiliEmbedUrl(bv, page) {
   page = page || 1;
   var cid = getBiliCid(bv, page);
