@@ -1300,6 +1300,7 @@ function getBiliCid(bv, page) {
   if (pages && pages[String(page)]) return pages[String(page)];
   return null;
 }
+// v2 - 修复移动端cid参数
 // B站工具函数
 function getBiliSearchUrl(keyword) {
   return 'https://search.bilibili.com/all?keyword=' + encodeURIComponent(keyword);
