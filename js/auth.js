@@ -157,23 +157,51 @@
   function isLoggedIn() { return !!cache.user; }
   function getCurrentUser() { return cache.user ? cache.user.username : null; }
 
-  // ========= 模式探测:优先用 me() 探测云端可用性 =========
-  // 探测策略:
-  //   1) hostname 是 Vercel 源站 → 发 /api/auth/me 探测
-  //      - 返回 JSON(无论 success) → cloud
+  // ========= 模式探测:区分部署环境,决定是否强切本地模式 =========
+  // 说明:手机端 Safari / 微信内置浏览器的 ITP(智能追踪预防) 会对以下共享/公网后缀域名拒绝设置 HttpOnly Cookie:
+  //       vercel.app, workers.dev, onrender.com, render.com, pages.dev, netlify.app 等
+  //       直接后果:登录 API 调通了(后端返回成功),但 Cookie 写不进浏览器,后续请求无 session → 登录态丢失 / "用户名不存在"
+  //       所以上述域名一律强制 local 模式,不依赖 Cookie,改用 localStorage 本地账号。
+  //
+  // 规则:
+  //   1) hostname 匹配已知公网/共享后缀 → 直接 local
+  //   2) 其他(自定义备案域名/localhost/内网 IP) → 发 /api/auth/me 探测
+  //      - 返回 JSON → cloud
   //      - 网络异常 / 404 / 非 JSON → local
-  //   2) hostname 是 *.workers.dev → 直接 local(公网后缀域名受 Safari ITP 限制,Cookie 不可靠)
-  //   3) 其他(hostname 自定义/localhost)→ 发 /api/auth/me 探测
-  //      - 返回 JSON → cloud(假设自定义域名 Cookie 能正常工作)
-  //      - 否则 local
-  function isWorkerProxyHost() {
+  var SHARED_HOST_SUFFIXES = [
+    '.workers.dev',
+    '.vercel.app',
+    '.onrender.com',
+    '.render.com',
+    '.pages.dev',
+    '.netlify.app',
+    '.github.io',
+    '.surge.sh',
+    '.firebaseapp.com',
+    '.web.app',
+    '.akamaized.net',
+    '.herokuapp.com',
+    '.glitch.me',
+    '.repl.co',
+    '.koyeb.app',
+    '.fly.dev',
+    '.railway.app',
+    '.s3.amazonaws.com',
+  ];
+  function isSharedHost() {
     var h = (location.hostname || '').toLowerCase();
-    return h.endsWith('.workers.dev');
+    if (!h) return false;
+    for (var i = 0; i < SHARED_HOST_SUFFIXES.length; i++) {
+      if (h.endsWith(SHARED_HOST_SUFFIXES[i])) return true;
+    }
+    // 纯 IP 地址(无点/四段数字)也视为不稳定环境,倾向于 local(方便本地测试和 http://ip 直访问)
+    if (/^\d+\.\d+\.\d+\.\d+$/.test(h)) return false; // IP 可以尝试 cloud 探测,不会被 ITP 限制
+    return false;
   }
   async function detectMode() {
     if (mode) return mode;
-    // workers.dev 公网后缀:Safari ITP / 微信内置浏览器会拒绝设置 Cookie,强制本地模式
-    if (isWorkerProxyHost()) { mode = 'local'; return mode; }
+    // 共享/公网后缀域名 → 强制 local 模式,跳过任何 API 探测,避免误以为 cloud 可用
+    if (isSharedHost()) { mode = 'local'; return mode; }
     try {
       var r = await fetch(API_BASE + '/auth/me', {
         method: 'GET',
@@ -191,17 +219,30 @@
     }
   }
 
+  // ========= 云端响应合法性判断 + fallback 工具(放在最前,确保任何 cloudXxx 函数调用时已可用) =========
+  function cloudResponseLooksValid(r) {
+    return r && r.ok && r.data && typeof r.data.success === 'boolean';
+  }
+  function fallbackToLocalOnce() {
+    mode = 'local';
+  }
+
   // ========= 云端模式 me =========
   async function cloudMe() {
     var r = await req('/auth/me', 'GET');
-    if (r.ok && r.data && r.data.success) {
+    // 响应不是合法 JSON success 结构 → 降级本地模式
+    if (!cloudResponseLooksValid(r)) {
+      fallbackToLocalOnce();
+      return localMe();
+    }
+    if (r.data.success) {
       setUserCache(r.data.user);
       cache.ready = true;
       return { success: true, user: r.data.user };
     }
     setUserCache(null);
     cache.ready = true;
-    return { success: false, message: r.data ? r.data.message : '未登录', code: r.data && r.data.code };
+    return { success: false, message: r.data.message || '未登录', code: r.data.code };
   }
 
   // ========= 本地模式 me =========
@@ -235,13 +276,18 @@
   // ========= 登录 =========
   async function cloudLogin(username, password) {
     var r = await req('/auth/login', 'POST', { username: username, password: password });
-    if (r.ok && r.data && r.data.success) {
+    // 响应不是合法 JSON success(静态站点 200 HTML/空 body):降级本地模式并重试
+    if (!cloudResponseLooksValid(r)) {
+      fallbackToLocalOnce();
+      return localLogin(username, password);
+    }
+    if (r.data.success) {
       setUserCache({ username: r.data.username, createdAt: r.data.createdAt });
       try { autoMigrateOldProgress(r.data.username); } catch (e) {}
       fireAuthChanged();
       return { success: true, message: r.data.message || '登录成功' };
     }
-    return { success: false, message: r.data ? r.data.message : '登录失败' };
+    return { success: false, message: r.data.message || '登录失败' };
   }
 
   function localLogin(username, password) {
@@ -266,8 +312,12 @@
   // ========= 注册 =========
   async function cloudRegister(username, password, confirmPassword) {
     var r = await req('/auth/register', 'POST', { username: username, password: password, confirmPassword: confirmPassword || password });
-    if (r.ok && r.data && r.data.success) return { success: true, message: r.data.message || '注册成功,请登录' };
-    return { success: false, message: r.data ? r.data.message : '注册失败' };
+    if (!cloudResponseLooksValid(r)) {
+      fallbackToLocalOnce();
+      return localRegister(username, password, confirmPassword);
+    }
+    if (r.data.success) return { success: true, message: r.data.message || '注册成功,请登录' };
+    return { success: false, message: r.data.message || '注册失败' };
   }
 
   function localRegister(username, password, confirmPassword) {
