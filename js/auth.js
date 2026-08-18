@@ -158,22 +158,31 @@
   function getCurrentUser() { return cache.user ? cache.user.username : null; }
 
   // ========= 模式探测:优先用 me() 探测云端可用性 =========
-  // 探测策略:发一次 /api/auth/me
-  //   - 返回正常 JSON(无论 success) → 云端模式
-  //   - 网络异常(status=0) / 404 / 非 JSON → 本地模式
+  // 探测策略:
+  //   1) hostname 是 Vercel 源站 → 发 /api/auth/me 探测
+  //      - 返回 JSON(无论 success) → cloud
+  //      - 网络异常 / 404 / 非 JSON → local
+  //   2) hostname 是 *.workers.dev → 直接 local(公网后缀域名受 Safari ITP 限制,Cookie 不可靠)
+  //   3) 其他(hostname 自定义/localhost)→ 发 /api/auth/me 探测
+  //      - 返回 JSON → cloud(假设自定义域名 Cookie 能正常工作)
+  //      - 否则 local
+  function isWorkerProxyHost() {
+    var h = (location.hostname || '').toLowerCase();
+    return h.endsWith('.workers.dev');
+  }
   async function detectMode() {
     if (mode) return mode;
+    // workers.dev 公网后缀:Safari ITP / 微信内置浏览器会拒绝设置 Cookie,强制本地模式
+    if (isWorkerProxyHost()) { mode = 'local'; return mode; }
     try {
       var r = await fetch(API_BASE + '/auth/me', {
         method: 'GET',
         credentials: 'include',
         headers: {},
       });
-      // 能拿到响应头 + JSON body 即认为是云端可达
       var ct = r.headers.get('content-type') || '';
       if (r.status === 404) { mode = 'local'; return mode; }
       if (ct.indexOf('json') >= 0) { mode = 'cloud'; return mode; }
-      // 非 JSON 响应(可能是静态服务器返回 index.html)→ 本地模式
       mode = 'local';
       return mode;
     } catch (e) {
