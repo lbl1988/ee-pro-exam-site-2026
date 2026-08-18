@@ -1,8 +1,9 @@
-// 注册电气工程师基础考试2026 - 学习进度跟踪模块 (云端版本)
-// 与 Vercel KV + Edge Functions 同步
+// 注册电气工程师基础考试2026 - 学习进度跟踪模块
+// 双模式:云端模式(与 Vercel KV + Edge Functions 同步)
+//        本地模式(后端不可达时,全部读写走 localStorage,账号隔离按 ee-progress-{username})
 // 读: 内存缓存,同步 API(兼容原调用方式)
-// 写: 乐观更新缓存 + 异步落云端,失败回滚并派发 progressChanged
-// 登录后自动从云端拉取;本地旧数据已由 auth.js 在登录时自动迁移
+// 写: 乐观更新缓存 + 异步落云端(云端模式)/ 立即写本地(本地模式)
+// 登录后自动从云端拉取;本地旧数据已由 auth.js 在登录时自动迁移(仅云端模式)
 
 (function () {
   'use strict';
@@ -42,6 +43,30 @@
 
   function isLoggedIn() { return window.EEAuth && window.EEAuth.isLoggedIn(); }
   function currentUser() { return window.EEAuth ? window.EEAuth.getCurrentUser() : null; }
+  function isLocalMode() { return window.EEAuth && typeof window.EEAuth.getMode === 'function' && window.EEAuth.getMode() === 'local'; }
+
+  // ========= 本地模式存储 key =========
+  function localProgressKey() {
+    var u = currentUser();
+    return u ? ('ee-progress-' + u) : null;
+  }
+  function readLocalProgress() {
+    var k = localProgressKey();
+    if (!k) return cloneProgress(EMPTY);
+    try {
+      var raw = localStorage.getItem(k);
+      if (raw) {
+        var p = JSON.parse(raw);
+        return cloneProgress(p);
+      }
+    } catch (e) {}
+    return cloneProgress(EMPTY);
+  }
+  function writeLocalProgress(p) {
+    var k = localProgressKey();
+    if (!k) return;
+    try { localStorage.setItem(k, JSON.stringify(p)); } catch (e) {}
+  }
 
   // ========= 云端拉取 =========
   async function fetchProgress() {
@@ -53,6 +78,16 @@
     }
     var u = currentUser();
     state.loading = true;
+
+    // 本地模式:直接读 localStorage
+    if (isLocalMode()) {
+      state.progress = readLocalProgress();
+      state.loaded = true;
+      state.user = u;
+      state.loading = false;
+      return state.progress;
+    }
+
     var r = await req('/progress/get', 'GET');
     state.loading = false;
     if (r.ok && r.data && r.data.success) {
@@ -122,24 +157,27 @@
     return !!(d && d.videos[bv]);
   }
 
-  // ========= 乐观更新工具 =========
-  function rollback(snapshot, shouldDispatch) {
-    state.progress = snapshot;
-    if (shouldDispatch) document.dispatchEvent(new CustomEvent('progressChanged'));
-  }
+  // ========= 写操作:云端模式走乐观更新,本地模式直接改 localStorage =========
   function afterWrite(promise, snapshot, dispatchOnRollback) {
     promise.then(function (r) {
       if (r.ok && r.data && r.data.success) {
-        // API 返回了最新的 progress,用它覆盖本地,解决并发冲突
         if (r.data.progress) state.progress = cloneProgress(r.data.progress);
         document.dispatchEvent(new CustomEvent('progressChanged'));
       } else {
-        rollback(snapshot, dispatchOnRollback);
+        state.progress = snapshot;
+        if (dispatchOnRollback) document.dispatchEvent(new CustomEvent('progressChanged'));
       }
-    }).catch(function () { rollback(snapshot, dispatchOnRollback); });
+    }).catch(function () {
+      state.progress = snapshot;
+      if (dispatchOnRollback) document.dispatchEvent(new CustomEvent('progressChanged'));
+    });
+  }
+  function localPersist() {
+    if (state.progress) writeLocalProgress(state.progress);
+    document.dispatchEvent(new CustomEvent('progressChanged'));
   }
 
-  // ========= 写 API (同步返回立即结果,异步写云端+回滚) =========
+  // ========= 写 API =========
   function toggleBasic(subject) {
     var data = ensureData();
     if (!data) return null;
@@ -147,6 +185,7 @@
     data.basic[subject] = !data.basic[subject];
     var newVal = !!data.basic[subject];
     if (!newVal) delete data.basic[subject];
+    if (isLocalMode()) { localPersist(); return newVal; }
     var p = req('/progress/toggle-basic', 'POST', { subject: subject });
     afterWrite(p, snap, true);
     return newVal;
@@ -158,6 +197,7 @@
     data.hotpoints[point] = !data.hotpoints[point];
     var newVal = !!data.hotpoints[point];
     if (!newVal) delete data.hotpoints[point];
+    if (isLocalMode()) { localPersist(); return newVal; }
     var p = req('/progress/toggle-hotpoint', 'POST', { point: point });
     afterWrite(p, snap, true);
     return newVal;
@@ -169,6 +209,7 @@
     data.videos[bv] = !data.videos[bv];
     var newVal = !!data.videos[bv];
     if (!newVal) delete data.videos[bv];
+    if (isLocalMode()) { localPersist(); return newVal; }
     var p = req('/progress/toggle-video', 'POST', { bv: bv });
     afterWrite(p, snap, true);
     return newVal;
@@ -185,6 +226,7 @@
       date: new Date().toISOString().slice(0, 10),
     };
     data.notes.unshift(n);
+    if (isLocalMode()) { localPersist(); return true; }
     var p = req('/progress/note-add', 'POST', { title: title, content: content });
     afterWrite(p, snap, true);
     return true;
@@ -204,6 +246,7 @@
       }
     }
     if (!found) return false;
+    if (isLocalMode()) { localPersist(); return true; }
     var p = req('/progress/note-update', 'POST', { id: id, title: title, content: content });
     afterWrite(p, snap, true);
     return true;
@@ -215,6 +258,7 @@
     var before = data.notes.length;
     data.notes = data.notes.filter(function (n) { return n.id !== id; });
     if (data.notes.length === before) return false;
+    if (isLocalMode()) { localPersist(); return true; }
     var p = req('/progress/note-delete', 'POST', { id: id });
     afterWrite(p, snap, true);
     return true;
@@ -235,6 +279,7 @@
       views: 0,
     };
     data.shares.unshift(s);
+    if (isLocalMode()) { localPersist(); return true; }
     var p = req('/progress/share-add', 'POST', { title: title, content: content, direction: direction });
     afterWrite(p, snap, true);
     return true;
@@ -246,6 +291,7 @@
     var before = data.shares.length;
     data.shares = data.shares.filter(function (s) { return s.id !== id; });
     if (data.shares.length === before) return false;
+    if (isLocalMode()) { localPersist(); return true; }
     var p = req('/progress/share-delete', 'POST', { id: id });
     afterWrite(p, snap, true);
     return true;

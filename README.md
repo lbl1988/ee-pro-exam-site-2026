@@ -1,8 +1,8 @@
-# 注册电气工程师基础考试2026复习网站 (云端同步版)
+# 注册电气工程师基础考试2026复习网站 (双模式版 v2.1)
 
 供配电 & 发输变电双方向 · 基础知识 · 高频考点 · 视频课程 · 学习笔记 · 学友分享
 
-**版本 2.0.1** — 登录系统升级为 **Vercel KV + Edge Functions 真·云端账号**,跨设备同步,完美兼容 iPhone Safari (解决原 localStorage 版本在苹果手机登录不了的问题)。
+**版本 2.1.0** — 前端 **自动探测后端可用性,兼容 v1.0/v2.0 双模式**:Vercel 直连时走 v2.0 云端(Vercel KV + HttpOnly Cookie);后端不可达时(纯静态部署 / Cloudflare Workers 反代 / 本地预览)自动降级为 v1.0 本地账号(localStorage)。同一套代码兼顾两种部署形态,无需改动后端。
 
 > **v2.0.1 修复记录**(2026-08-18,部署前必须包含,否则账号系统无法工作):
 > 1. `lib/kv.js` 的 `kvRaw` 漏加 `export` → 注册/登录运行时 `ReferenceError`(所有用户表操作 500)
@@ -35,6 +35,35 @@
 | 清缓存后果 | ❌ 账号+笔记+进度 全丢失 | ✅ 数据在云端,清缓存无任何影响 |
 | iPhone 兼容性 | ❌ vercel.app 域名下经常登录失败 | ✅ Cookie 模式 Safari 原生支持 |
 | 本地旧数据迁移 | — | ✅ 登录时自动检测并迁移到云端 |
+
+## 🔁 v2.1 双模式机制(同一套代码兼顾 v1.0/v2.0)
+
+### 触发逻辑
+`js/auth.js` 在页面加载时调用 `/api/auth/me` 探活:
+- **返回 JSON**(无论 success) → `mode='cloud'`(v2.0 云端模式)
+- **网络异常 / 404 / 非 JSON 响应** → `mode='local'`(v1.0 本地模式)
+
+### 两种模式对比
+
+| 项目 | cloud 模式(v2.0) | local 模式(v1.0) |
+|---|---|---|
+| 触发条件 | Vercel 直连,KV 可达 | 纯静态 / Workers 反代 / 本地预览 |
+| 账号存储 | Vercel KV 云端用户表 | `localStorage['ee-users']`(salt+SHA-256 多轮) |
+| 会话 | HttpOnly Secure Cookie,30 天 TTL | `localStorage['ee-session']` |
+| 进度/笔记/分享 | KV 云端,跨设备同步 | `localStorage['ee-progress-{username}']`,本机隔离 |
+| 写操作 | 乐观更新缓存 + 异步落云端,失败回滚 | 直接写 localStorage,立即生效 |
+| 修改密码 | Edge Function 重哈希 | 本地用户表更新 salt+hash |
+| 兼容性 | iPhone Safari / 微信内置浏览器 | 受 Safari ITP 限制(7天/拒绝),纯静态场景可用 |
+
+### 行为说明
+- **登录弹窗底部提示文案会随模式切换**:本地模式明确告知"数据保存在本机,清缓存会丢失"
+- **本地模式不会触发云端迁移**(无意义,后端不通);迁移只在 cloud 模式登录时自动触发
+- **模式不可中途切换**:页面加载时探测一次,生命周期内固定;切换部署只需重新加载页面
+
+### 部署建议
+- **生产主站**:Vercel → cloud 模式,完整功能
+- **国内访问入口**:Cloudflare Workers 反代静态资源 → 自动 local 模式,手机能登录使用所有功能,数据存本机
+- **本地预览**:`python -m http.server` → local 模式,可直接测试注册/登录/笔记全流程
 
 ## 项目简介
 
