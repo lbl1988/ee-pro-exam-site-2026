@@ -10,6 +10,13 @@
 > 3. `lib/auth.js` 移除 `require('crypto')` 和 `Buffer` fallback(Edge Runtime 无 Node 内置模块,esbuild 会把 Node 模块引入 bundle 导致部署失败),改用全局 `crypto`/`btoa`/`atob`(Edge Runtime 与 Node 18+ 均原生支持)
 >
 > 已通过 **esbuild `platform=neutral` 打包验证(15/15 API)** + **内存 mock Upstash KV 端到端测试(11/11:注册/重复注册/非法用户名/登录/Cookie 标志/错误密码/会话校验/进度标记/迁移合并)**,可作为部署前的回归测试基线。
+>
+> **🚀 部署状态**(2026-08-18):
+> - 生产站点:**https://ee-pro-exam-site-2026.vercel.app**
+> - KV 存储:已创建并连接 `upstash-kv-fuchsia-saddle`(Singapore 区域,free 计划)
+> - 环境变量:`KV_REST_API_URL` / `KV_REST_API_TOKEN` / `KV_REST_API_READ_ONLY_TOKEN` / `KV_URL` / `REDIS_URL` 已注入 Production + Preview
+> - 线上冒烟测试:**11/11 通过**(注册、重复注册被拒、登录、me 会话校验、视频标记、笔记添加、未登录拦截、退出登录、静态页面访问)
+> - 本地 `.env.local` 已由 Vercel CLI 自动生成(含开发环境 OIDC Token,**请勿提交**)
 
 
 ## ✨ v2.0 版本新特性

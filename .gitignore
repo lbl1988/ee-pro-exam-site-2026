@@ -20,3 +20,10 @@ npm-debug.log*
 # 环境
 .env
 .env.local
+
+# Vercel 本地配置
+.vercel/
+
+# Vercel CLI / 插件下载的 skill 目录
+.agents/
+.claude/
