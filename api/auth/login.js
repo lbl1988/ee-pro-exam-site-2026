@@ -5,7 +5,6 @@ import {
   getUserRecord,
   verifyPassword,
   generateSessionId,
-  kvSet,
   SESSIONS_PREFIX,
   SESSION_TTL_SEC,
   COOKIE_NAME,
@@ -13,7 +12,7 @@ import {
   err,
   ok,
 } from '../../lib/auth.js';
-import { getEnvError } from '../../lib/kv.js';
+import { getEnvError, kvSet } from '../../lib/kv.js';
 
 export const config = { runtime: 'edge' };
 
