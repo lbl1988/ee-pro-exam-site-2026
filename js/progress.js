@@ -1,167 +1,291 @@
-// 注册电气工程师基础考试2026 - 学习进度跟踪模块
-// 基于localStorage,按用户名隔离存储学习进度与笔记
+// 注册电气工程师基础考试2026 - 学习进度跟踪模块 (云端版本)
+// 与 Vercel KV + Edge Functions 同步
+// 读: 内存缓存,同步 API(兼容原调用方式)
+// 写: 乐观更新缓存 + 异步落云端,失败回滚并派发 progressChanged
+// 登录后自动从云端拉取;本地旧数据已由 auth.js 在登录时自动迁移
 
 (function () {
   'use strict';
 
-  function getUserKey() {
-    var user = window.EEAuth && window.EEAuth.getCurrentUser();
-    return user ? 'ee-progress-' + user : null;
+  var API_BASE = '/api';
+  var EMPTY = { basic: {}, hotpoints: {}, videos: {}, notes: [], shares: [] };
+
+  var state = {
+    progress: null,  // 内存缓存: {basic,hotpoints,videos,notes,shares}
+    loading: false,
+    loaded: false,
+    user: null,
+  };
+
+  function req(path, method, body) {
+    return fetch(API_BASE + path, {
+      method: method || 'GET',
+      credentials: 'include',
+      headers: body ? { 'Content-Type': 'application/json' } : {},
+      body: body ? JSON.stringify(body) : undefined,
+    }).then(function (r) {
+      return r.json().then(function (j) { return { ok: r.ok, status: r.status, data: j }; },
+        function () { return { ok: r.ok, status: r.status, data: { success: r.ok } }; });
+    }).catch(function () { return { ok: false, status: 0, data: { success: false, message: '网络异常' } }; });
   }
 
-  function getProgress() {
-    var key = getUserKey();
-    if (!key) return null;
-    try {
-      var raw = localStorage.getItem(key);
-      if (raw) return JSON.parse(raw);
-    } catch (e) {}
+  function cloneProgress(p) {
+    if (!p) return JSON.parse(JSON.stringify(EMPTY));
     return {
-      basic: {},       // { 科目名: true }
-      hotpoints: {},   // { 考点名: true }
-      videos: {},      // { bv号: true }
-      notes: [],        // [{id,title,content,date}]
-      shares: []        // [{id,title,content,author,date,direction}]
+      basic: Object.assign({}, p.basic || {}),
+      hotpoints: Object.assign({}, p.hotpoints || {}),
+      videos: Object.assign({}, p.videos || {}),
+      notes: Array.isArray(p.notes) ? p.notes.map(function (n) { return Object.assign({}, n); }) : [],
+      shares: Array.isArray(p.shares) ? p.shares.map(function (s) { return Object.assign({}, s); }) : [],
     };
   }
 
-  function saveProgress(data) {
-    var key = getUserKey();
-    if (!key) return false;
-    localStorage.setItem(key, JSON.stringify(data));
-    return true;
+  function isLoggedIn() { return window.EEAuth && window.EEAuth.isLoggedIn(); }
+  function currentUser() { return window.EEAuth ? window.EEAuth.getCurrentUser() : null; }
+
+  // ========= 云端拉取 =========
+  async function fetchProgress() {
+    if (!isLoggedIn()) {
+      state.progress = null;
+      state.loaded = false;
+      state.user = null;
+      return null;
+    }
+    var u = currentUser();
+    state.loading = true;
+    var r = await req('/progress/get', 'GET');
+    state.loading = false;
+    if (r.ok && r.data && r.data.success) {
+      state.progress = cloneProgress(r.data.progress);
+      state.loaded = true;
+      state.user = u;
+      return state.progress;
+    }
+    // 拉取失败:用空结构兜底,保持 UI 可操作
+    state.progress = cloneProgress(EMPTY);
+    state.loaded = true;
+    state.user = u;
+    return state.progress;
   }
 
-  // 基础知识:标记/取消掌握
-  function toggleBasic(subject) {
-    var data = getProgress();
-    if (!data) return null;
-    data.basic[subject] = !data.basic[subject];
-    saveProgress(data);
-    return data.basic[subject];
+  // 懒加载:首次 get 时确保有数据;未登录返回 EMPTY
+  function ensureData() {
+    if (!isLoggedIn()) { state.progress = null; state.loaded = false; state.user = null; return null; }
+    var u = currentUser();
+    // 切换用户后需要重新拉
+    if (state.user && state.user !== u) {
+      state.progress = null; state.loaded = false;
+    }
+    if (state.loaded && state.progress) return state.progress;
+    if (state.loading) return null;
+    // 触发异步拉取,立即返回 EMPTY 让页面先渲染;拉取完成后派发 progressChanged
+    if (!state.loaded && !state.loading) {
+      fetchProgress().then(function () {
+        document.dispatchEvent(new CustomEvent('progressChanged'));
+      });
+      // auth 就绪后的兜底拉取
+      if (window.EEAuth && typeof window.EEAuth.__ready === 'function') {
+        window.EEAuth.__ready().then(function () {
+          if (isLoggedIn() && !state.loaded) return fetchProgress().then(function () {
+            document.dispatchEvent(new CustomEvent('progressChanged'));
+          });
+        });
+      }
+    }
+    return state.progress || cloneProgress(EMPTY);
   }
 
-  // 高频考点:标记/取消掌握
-  function toggleHotPoint(point) {
-    var data = getProgress();
-    if (!data) return null;
-    data.hotpoints[point] = !data.hotpoints[point];
-    saveProgress(data);
-    return data.hotpoints[point];
+  // ========= 同步 API (读) =========
+  function getProgress() {
+    var d = ensureData();
+    return d ? cloneProgress(d) : null;
   }
 
-  // 视频:标记/取消已学
-  function toggleVideo(bv) {
-    var data = getProgress();
-    if (!data) return null;
-    data.videos[bv] = !data.videos[bv];
-    saveProgress(data);
-    return data.videos[bv];
-  }
-
-  // 笔记增删改
   function getNotes() {
-    var data = getProgress();
-    return data ? data.notes : [];
+    var d = ensureData();
+    return d ? d.notes.map(function (n) { return Object.assign({}, n); }) : [];
+  }
+  function getShares() {
+    var d = ensureData();
+    return d ? d.shares.map(function (s) { return Object.assign({}, s); }) : [];
+  }
+  function isBasicMarked(subject) {
+    var d = ensureData();
+    return !!(d && d.basic[subject]);
+  }
+  function isHotPointMarked(point) {
+    var d = ensureData();
+    return !!(d && d.hotpoints[point]);
+  }
+  function isVideoMarked(bv) {
+    var d = ensureData();
+    return !!(d && d.videos[bv]);
+  }
+
+  // ========= 乐观更新工具 =========
+  function rollback(snapshot, shouldDispatch) {
+    state.progress = snapshot;
+    if (shouldDispatch) document.dispatchEvent(new CustomEvent('progressChanged'));
+  }
+  function afterWrite(promise, snapshot, dispatchOnRollback) {
+    promise.then(function (r) {
+      if (r.ok && r.data && r.data.success) {
+        // API 返回了最新的 progress,用它覆盖本地,解决并发冲突
+        if (r.data.progress) state.progress = cloneProgress(r.data.progress);
+        document.dispatchEvent(new CustomEvent('progressChanged'));
+      } else {
+        rollback(snapshot, dispatchOnRollback);
+      }
+    }).catch(function () { rollback(snapshot, dispatchOnRollback); });
+  }
+
+  // ========= 写 API (同步返回立即结果,异步写云端+回滚) =========
+  function toggleBasic(subject) {
+    var data = ensureData();
+    if (!data) return null;
+    var snap = cloneProgress(data);
+    data.basic[subject] = !data.basic[subject];
+    var newVal = !!data.basic[subject];
+    if (!newVal) delete data.basic[subject];
+    var p = req('/progress/toggle-basic', 'POST', { subject: subject });
+    afterWrite(p, snap, true);
+    return newVal;
+  }
+  function toggleHotPoint(point) {
+    var data = ensureData();
+    if (!data) return null;
+    var snap = cloneProgress(data);
+    data.hotpoints[point] = !data.hotpoints[point];
+    var newVal = !!data.hotpoints[point];
+    if (!newVal) delete data.hotpoints[point];
+    var p = req('/progress/toggle-hotpoint', 'POST', { point: point });
+    afterWrite(p, snap, true);
+    return newVal;
+  }
+  function toggleVideo(bv) {
+    var data = ensureData();
+    if (!data) return null;
+    var snap = cloneProgress(data);
+    data.videos[bv] = !data.videos[bv];
+    var newVal = !!data.videos[bv];
+    if (!newVal) delete data.videos[bv];
+    var p = req('/progress/toggle-video', 'POST', { bv: bv });
+    afterWrite(p, snap, true);
+    return newVal;
   }
 
   function addNote(title, content) {
-    var data = getProgress();
+    var data = ensureData();
     if (!data) return false;
-    data.notes.unshift({
-      id: 'n' + Date.now(),
-      title: title,
-      content: content,
-      date: new Date().toISOString().slice(0, 10)
-    });
-    saveProgress(data);
+    var snap = cloneProgress(data);
+    var n = {
+      id: 'n' + Date.now() + Math.floor(Math.random() * 1000),
+      title: String(title || '').slice(0, 100),
+      content: String(content || '').slice(0, 5000),
+      date: new Date().toISOString().slice(0, 10),
+    };
+    data.notes.unshift(n);
+    var p = req('/progress/note-add', 'POST', { title: title, content: content });
+    afterWrite(p, snap, true);
     return true;
   }
-
-  function deleteNote(id) {
-    var data = getProgress();
-    if (!data) return false;
-    data.notes = data.notes.filter(function (n) { return n.id !== id; });
-    saveProgress(data);
-    return true;
-  }
-
   function updateNote(id, title, content) {
-    var data = getProgress();
+    var data = ensureData();
     if (!data) return false;
+    var snap = cloneProgress(data);
+    var found = false;
     for (var i = 0; i < data.notes.length; i++) {
       if (data.notes[i].id === id) {
-        data.notes[i].title = title;
-        data.notes[i].content = content;
+        data.notes[i].title = String(title || '').slice(0, 100);
+        data.notes[i].content = String(content || '').slice(0, 5000);
         data.notes[i].date = new Date().toISOString().slice(0, 10);
+        found = true;
         break;
       }
     }
-    saveProgress(data);
+    if (!found) return false;
+    var p = req('/progress/note-update', 'POST', { id: id, title: title, content: content });
+    afterWrite(p, snap, true);
     return true;
   }
-
-  // 学友分享 CRUD(按用户隔离,存储在各自账号下)
-  function getShares() {
-    var data = getProgress();
-    return data ? (data.shares || []) : [];
+  function deleteNote(id) {
+    var data = ensureData();
+    if (!data) return false;
+    var snap = cloneProgress(data);
+    var before = data.notes.length;
+    data.notes = data.notes.filter(function (n) { return n.id !== id; });
+    if (data.notes.length === before) return false;
+    var p = req('/progress/note-delete', 'POST', { id: id });
+    afterWrite(p, snap, true);
+    return true;
   }
 
   function addShare(title, content, direction) {
-    var data = getProgress();
+    var data = ensureData();
     if (!data) return false;
-    if (!data.shares) data.shares = [];
-    var user = window.EEAuth ? window.EEAuth.getCurrentUser() : '匿名学友';
-    data.shares.unshift({
-      id: 's' + Date.now(),
-      title: title,
-      content: content,
-      author: user,
+    var snap = cloneProgress(data);
+    var u = currentUser() || '匿名学友';
+    var s = {
+      id: 's' + Date.now() + Math.floor(Math.random() * 1000),
+      title: String(title || '').slice(0, 100),
+      content: String(content || '').slice(0, 5000),
+      author: u,
       date: new Date().toISOString().slice(0, 10),
       direction: direction || '通用',
-      views: 0
-    });
-    saveProgress(data);
+      views: 0,
+    };
+    data.shares.unshift(s);
+    var p = req('/progress/share-add', 'POST', { title: title, content: content, direction: direction });
+    afterWrite(p, snap, true);
     return true;
   }
-
   function deleteShare(id) {
-    var data = getProgress();
+    var data = ensureData();
     if (!data) return false;
-    if (!data.shares) return false;
+    var snap = cloneProgress(data);
+    var before = data.shares.length;
     data.shares = data.shares.filter(function (s) { return s.id !== id; });
-    saveProgress(data);
+    if (data.shares.length === before) return false;
+    var p = req('/progress/share-delete', 'POST', { id: id });
+    afterWrite(p, snap, true);
     return true;
   }
 
-  // 计算掌握率统计
+  // ========= 统计 =========
   function getStats() {
-    var data = getProgress();
+    var data = ensureData();
     if (!data) return null;
 
-    // 总数依赖全局数据(若已加载)
     var basicTotal = 0, basicDone = 0;
     var hotTotal = 0, hotDone = 0;
     var videoTotal = 0, videoDone = 0;
 
     if (typeof BASIC_KNOWLEDGE !== 'undefined') {
       var dirKey = window.EEUtils ? window.EEUtils.getDirectionKey() : 'powerDistribution';
-      BASIC_KNOWLEDGE.common.subjects.forEach(function (s) { basicTotal++; if (data.basic[s.name]) basicDone++; });
-      if (BASIC_KNOWLEDGE[dirKey]) {
-        BASIC_KNOWLEDGE[dirKey].subjects.forEach(function (s) { basicTotal++; if (data.basic[s.name]) basicDone++; });
+      if (BASIC_KNOWLEDGE.common && BASIC_KNOWLEDGE.common.subjects) {
+        BASIC_KNOWLEDGE.common.subjects.forEach(function (s) {
+          basicTotal++; if (data.basic[s.name]) basicDone++;
+        });
+      }
+      if (BASIC_KNOWLEDGE[dirKey] && BASIC_KNOWLEDGE[dirKey].subjects) {
+        BASIC_KNOWLEDGE[dirKey].subjects.forEach(function (s) {
+          basicTotal++; if (data.basic[s.name]) basicDone++;
+        });
       }
     }
-
     if (typeof HOT_POINTS !== 'undefined') {
       var dirKey2 = window.EEUtils ? window.EEUtils.getDirectionKey() : 'powerDistribution';
-      HOT_POINTS.common.points.forEach(function (p) { hotTotal++; if (data.hotpoints[p.point]) hotDone++; });
-      if (HOT_POINTS[dirKey2]) {
-        HOT_POINTS[dirKey2].points.forEach(function (p) { hotTotal++; if (data.hotpoints[p.point]) hotDone++; });
+      if (HOT_POINTS.common && HOT_POINTS.common.points) {
+        HOT_POINTS.common.points.forEach(function (p) {
+          hotTotal++; if (data.hotpoints[p.point]) hotDone++;
+        });
+      }
+      if (HOT_POINTS[dirKey2] && HOT_POINTS[dirKey2].points) {
+        HOT_POINTS[dirKey2].points.forEach(function (p) {
+          hotTotal++; if (data.hotpoints[p.point]) hotDone++;
+        });
       }
     }
-
-    // 视频统计:基于视频页实际展示的全部视频卡片(COURSE_CARDS)
-    // 覆盖5大类×所有学科×完整playlist,与页面标记完全一致
     if (typeof COURSE_CARDS !== 'undefined') {
       var dirKey3 = window.EEUtils ? window.EEUtils.getDirectionKey() : 'powerDistribution';
       var dirCards = COURSE_CARDS[dirKey3];
@@ -176,12 +300,8 @@
             if (!cards || !cards.length) continue;
             cards.forEach(function (card) {
               videoTotal++;
-              var bv = card.bv;
-              var page = card.page || 1;
-              var vkey = String(bv) + '@p' + String(page);
-              if (data.videos[vkey]) {
-                videoDone++;
-              }
+              var vkey = String(card.bv || '') + '@p' + String(card.page || 1);
+              if (data.videos[vkey]) videoDone++;
             });
           }
         }
@@ -192,24 +312,21 @@
       basic: { done: basicDone, total: basicTotal, percent: basicTotal ? Math.round(basicDone / basicTotal * 100) : 0 },
       hotpoints: { done: hotDone, total: hotTotal, percent: hotTotal ? Math.round(hotDone / hotTotal * 100) : 0 },
       videos: { done: videoDone, total: videoTotal, percent: videoTotal ? Math.round(videoDone / videoTotal * 100) : 0 },
-      notes: data.notes.length
+      notes: data.notes.length,
     };
   }
 
-  function isBasicMarked(subject) {
-    var data = getProgress();
-    return data && !!data.basic[subject];
-  }
-  function isHotPointMarked(point) {
-    var data = getProgress();
-    return data && !!data.hotpoints[point];
-  }
-  function isVideoMarked(bv) {
-    var data = getProgress();
-    return data && !!data.videos[bv];
-  }
+  // ========= 事件联动:登录/登出/方向切换时,重拉云端进度 =========
+  document.addEventListener('authChanged', function () {
+    state.loaded = false;
+    state.progress = null;
+    if (isLoggedIn()) {
+      fetchProgress().then(function () {
+        document.dispatchEvent(new CustomEvent('progressChanged'));
+      });
+    }
+  });
 
-  // 暴露API
   window.EEProgress = {
     getProgress: getProgress,
     toggleBasic: toggleBasic,
@@ -225,6 +342,7 @@
     getStats: getStats,
     isBasicMarked: isBasicMarked,
     isHotPointMarked: isHotPointMarked,
-    isVideoMarked: isVideoMarked
+    isVideoMarked: isVideoMarked,
+    __fetchProgress: fetchProgress, // 外部可手动触发刷新
   };
 })();

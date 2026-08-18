@@ -1,0 +1,21 @@
+{
+  "name": "ee-pro-exam-site-2026",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "注册电气工程师基础考试2026复习平台 - 云同步版(Vercel KV + Edge Functions)",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "vercel dev",
+    "start": "python -m http.server 8000"
+  },
+  "keywords": [
+    "vercel",
+    "edge-functions",
+    "kv",
+    "注册电气工程师"
+  ],
+  "license": "MIT"
+}
