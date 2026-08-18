@@ -2,7 +2,15 @@
 
 供配电 & 发输变电双方向 · 基础知识 · 高频考点 · 视频课程 · 学习笔记 · 学友分享
 
-**版本 2.0** — 登录系统升级为 **Vercel KV + Edge Functions 真·云端账号**,跨设备同步,完美兼容 iPhone Safari (解决原 localStorage 版本在苹果手机登录不了的问题)。
+**版本 2.0.1** — 登录系统升级为 **Vercel KV + Edge Functions 真·云端账号**,跨设备同步,完美兼容 iPhone Safari (解决原 localStorage 版本在苹果手机登录不了的问题)。
+
+> **v2.0.1 修复记录**(2026-08-18,部署前必须包含,否则账号系统无法工作):
+> 1. `lib/kv.js` 的 `kvRaw` 漏加 `export` → 注册/登录运行时 `ReferenceError`(所有用户表操作 500)
+> 2. `api/auth/login.js` 误从 `lib/auth.js` 导入未导出的 `kvSet` → esbuild 打包直接失败
+> 3. `lib/auth.js` 移除 `require('crypto')` 和 `Buffer` fallback(Edge Runtime 无 Node 内置模块,esbuild 会把 Node 模块引入 bundle 导致部署失败),改用全局 `crypto`/`btoa`/`atob`(Edge Runtime 与 Node 18+ 均原生支持)
+>
+> 已通过 **esbuild `platform=neutral` 打包验证(15/15 API)** + **内存 mock Upstash KV 端到端测试(11/11:注册/重复注册/非法用户名/登录/Cookie 标志/错误密码/会话校验/进度标记/迁移合并)**,可作为部署前的回归测试基线。
+
 
 ## ✨ v2.0 版本新特性
 
