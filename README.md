@@ -11,6 +11,12 @@
 >
 > 已通过 **esbuild `platform=neutral` 打包验证(15/15 API)** + **内存 mock Upstash KV 端到端测试(11/11:注册/重复注册/非法用户名/登录/Cookie 标志/错误密码/会话校验/进度标记/迁移合并)**,可作为部署前的回归测试基线。
 >
+> **v2.0.2 修复记录**(2026-08-18,登录体验与安全加固):
+> 1. 移除"忘记密码"死路 tab(云端无验证重置本就不可用),改为提示联系管理员
+> 2. 登录/注册增加 KV 频控:登录每 IP 15 分钟 ≤20 次,注册每 IP 24 小时 ≤10 次(新增 `lib/rate-limit.js`)
+> 3. `clearCookieHeader` 补上 `Secure` 属性,与设置 cookie 时保持一致
+> 4. 注册表单增加"确认密码"字段,前后端二次校验
+>
 > **🚀 部署状态**(2026-08-18):
 > - 生产站点:**https://ee-pro-exam-site-2026.vercel.app**
 > - KV 存储:已创建并连接 `upstash-kv-fuchsia-saddle`(Singapore 区域,free 计划)

@@ -84,8 +84,8 @@
     return { success: false, message: r.data ? r.data.message : '登录失败' };
   }
 
-  async function register(username, password) {
-    var r = await req('/auth/register', 'POST', { username: username, password: password });
+  async function register(username, password, confirmPassword) {
+    var r = await req('/auth/register', 'POST', { username: username, password: password, confirmPassword: confirmPassword || password });
     if (r.ok && r.data && r.data.success) {
       return { success: true, message: r.data.message || '注册成功,请登录' };
     }
@@ -108,11 +108,6 @@
     });
     if (r.ok && r.data && r.data.success) return { success: true, message: r.data.message };
     return { success: false, message: r.data ? r.data.message : '修改失败' };
-  }
-
-  async function resetPassword(username, newPassword) {
-    // 纯前端本地版本的"重置"是直接按用户名重设密码;云端为安全起见不支持无验证重置
-    return { success: false, message: '云端版本不支持无验证重置密码,请联系管理员或重新注册' };
   }
 
   // ========= 本地旧数据自动迁移 (登录成功后触发) =========
@@ -157,7 +152,6 @@
       '<div class="auth-tabs">' +
       '<button class="auth-tab active" data-mode="login">登录</button>' +
       '<button class="auth-tab" data-mode="register">注册</button>' +
-      '<button class="auth-tab" data-mode="reset">忘记密码</button>' +
       '</div>' +
       '<form id="auth-form" class="auth-form">' +
       '<div class="form-group">' +
@@ -173,12 +167,13 @@
       '<input type="password" id="auth-password" placeholder="请输入密码" autocomplete="current-password" required>' +
       '</div>' +
       '<div class="form-group" id="grp-confirm-password" style="display:none;">' +
-      '<label for="auth-confirm-password">确认新密码</label>' +
+      '<label for="auth-confirm-password">确认密码</label>' +
       '<input type="password" id="auth-confirm-password" placeholder="请再次输入新密码" autocomplete="new-password">' +
       '</div>' +
       '<button type="submit" class="btn btn-primary btn-block" id="auth-submit">登录</button>' +
       '<p class="auth-message" id="auth-message"></p>' +
       '<p class="auth-hint">提示:用户数据云端保存,跨设备同步 · 账号在所有平台通用</p>' +
+      '<p class="auth-hint">忘记密码?请联系管理员重置账号</p>' +
       '</form>' +
       '</div>';
     document.body.appendChild(modal);
@@ -241,11 +236,6 @@
       pwdLabel.textContent = '设置密码';
       pwdInput.placeholder = '请设置密码(至少4位)';
       pwdInput.setAttribute('autocomplete', 'new-password');
-    } else if (mode === 'reset') {
-      submitBtn.textContent = '重置密码';
-      pwdLabel.textContent = '新密码';
-      pwdInput.placeholder = '请输入新密码(至少4位)';
-      pwdInput.setAttribute('autocomplete', 'new-password');
       confirmGrp.style.display = 'block';
       confirmInput.required = true;
     }
@@ -290,10 +280,8 @@
       if (mode === 'login') {
         result = await login(username, password);
       } else if (mode === 'register') {
-        result = await register(username, password);
-      } else if (mode === 'reset') {
-        if (password !== confirmPwd) result = { success: false, message: '两次输入的新密码不一致' };
-        else result = await resetPassword(username, password);
+        if (password !== confirmPwd) result = { success: false, message: '两次输入的密码不一致' };
+        else result = await register(username, password, confirmPwd);
       }
       showMsg(msgEl, result.message, result.success);
       submitBtn.disabled = false;
@@ -312,8 +300,6 @@
           document.getElementById('auth-username').value = username;
           document.getElementById('auth-password').focus();
         }, 800);
-      } else if (result.success && mode === 'reset') {
-        setTimeout(function () { modal.querySelector('.auth-tab[data-mode="login"]').click(); }, 1000);
       }
     });
   }
@@ -390,7 +376,6 @@
     register: register,
     logout: logout,
     changePassword: changePassword,
-    resetPassword: resetPassword,
     openAuthModal: openAuthModal,
     openPwdModal: openPwdModal,
     buildAuthUI: buildAuthUI,

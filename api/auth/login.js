@@ -13,6 +13,7 @@ import {
   ok,
 } from '../../lib/auth.js';
 import { getEnvError, kvSet } from '../../lib/kv.js';
+import { rateLimit, clientIp } from '../../lib/rate-limit.js';
 
 export const config = { runtime: 'edge' };
 
@@ -21,6 +22,12 @@ export default async function handler(req) {
   if (envErr) return err('服务未配置KV存储: ' + envErr, 500);
 
   if (req.method !== 'POST') return err('仅支持POST', 405);
+
+  // 频控:防暴力破解,每 IP 15 分钟内最多 20 次登录尝试
+  const ip = clientIp(req);
+  const rl = await rateLimit('login:' + ip, 20, 15 * 60);
+  if (rl.error) return err(rl.error, 500);
+  if (rl.limited) return err('登录尝试过于频繁,请 ' + Math.max(1, Math.ceil(rl.retryAfter / 60)) + ' 分钟后再试', 429);
 
   let body;
   try {
