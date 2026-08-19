@@ -382,6 +382,25 @@
     return localChangePassword(username, oldPassword, newPassword);
   }
 
+  // ========= 忘记密码 / 重置密码 (local 模式:验证用户名后直接设新密码) =========
+  function localResetPassword(username, newPassword) {
+    var users = readUsers();
+    var rec = users[username];
+    if (!rec) return Promise.resolve({ success: false, message: '用户不存在,请先注册' });
+    if ((newPassword || '').length < 4) return Promise.resolve({ success: false, message: '新密码至少4位' });
+    var salt = randomHex(16);
+    users[username].hash = hashPassword(newPassword, salt);
+    users[username].salt = salt;
+    writeUsers(users);
+    return Promise.resolve({ success: true, message: '密码重置成功,请用新密码登录' });
+  }
+  async function resetPassword(username, newPassword) {
+    await detectMode();
+    // cloud 模式暂不支持自助重置(需后端邮件验证),提示联系管理员
+    if (mode === 'cloud') return { success: false, message: '云端模式暂不支持自助重置密码,请联系管理员' };
+    return localResetPassword(username, newPassword);
+  }
+
   // ========= 本地旧数据自动迁移 (登录成功后触发,仅云端模式有意义) =========
   function autoMigrateOldProgress(username) {
     if (cache.migrated) return;
@@ -431,6 +450,7 @@
       '<div class="auth-tabs">' +
       '<button class="auth-tab active" data-mode="login">登录</button>' +
       '<button class="auth-tab" data-mode="register">注册</button>' +
+      '<button class="auth-tab" data-mode="forgot">忘记密码</button>' +
       '</div>' +
       '<form id="auth-form" class="auth-form">' +
       '<div class="form-group">' +
@@ -452,7 +472,6 @@
       '<button type="submit" class="btn btn-primary btn-block" id="auth-submit">登录</button>' +
       '<p class="auth-message" id="auth-message"></p>' +
       '<p class="auth-hint" id="auth-mode-hint">提示:用户数据云端保存,跨设备同步 · 账号在所有平台通用</p>' +
-      '<p class="auth-hint">忘记密码?请联系管理员重置账号</p>' +
       // 数据迁移区(local 模式下显示):导出 JSON / 导入 JSON
       '<div id="data-migrate-wrap" style="display:none;margin-top:14px;padding-top:12px;border-top:1px dashed #ccc;">' +
       '<p class="auth-hint" style="margin-bottom:6px;"><i class="fas fa-sync-alt"></i> 本地账号跨设备同步:先导出 JSON,发到另一设备后再导入</p>' +
@@ -565,6 +584,13 @@
       submitBtn.textContent = '注册';
       pwdLabel.textContent = '设置密码';
       pwdInput.placeholder = '请设置密码(至少4位)';
+      pwdInput.setAttribute('autocomplete', 'new-password');
+      confirmGrp.style.display = 'block';
+      confirmInput.required = true;
+    } else if (modeStr === 'forgot') {
+      submitBtn.textContent = '重置密码';
+      pwdLabel.textContent = '新密码';
+      pwdInput.placeholder = '请输入新密码(至少4位)';
       pwdInput.setAttribute('autocomplete', 'new-password');
       confirmGrp.style.display = 'block';
       confirmInput.required = true;
@@ -741,6 +767,9 @@
       } else if (modeStr === 'register') {
         if (password !== confirmPwd) result = { success: false, message: '两次输入的密码不一致' };
         else result = await register(username, password, confirmPwd);
+      } else if (modeStr === 'forgot') {
+        if (password !== confirmPwd) result = { success: false, message: '两次输入的密码不一致' };
+        else result = await resetPassword(username, password);
       }
       showMsg(msgEl, result.message, result.success);
       submitBtn.disabled = false;
@@ -758,6 +787,13 @@
           document.getElementById('auth-username').value = username;
           document.getElementById('auth-password').focus();
         }, 800);
+      } else if (result.success && modeStr === 'forgot') {
+        setTimeout(function () {
+          modal.querySelector('.auth-tab[data-mode="login"]').click();
+          document.getElementById('auth-username').value = username;
+          document.getElementById('auth-password').value = '';
+          document.getElementById('auth-password').focus();
+        }, 1000);
       }
     });
 
