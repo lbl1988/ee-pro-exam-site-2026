@@ -444,6 +444,14 @@
       '<p class="auth-message" id="auth-message"></p>' +
       '<p class="auth-hint" id="auth-mode-hint">提示:用户数据云端保存,跨设备同步 · 账号在所有平台通用</p>' +
       '<p class="auth-hint">忘记密码?请联系管理员重置账号</p>' +
+      // 数据迁移区(local 模式下显示):导出 JSON / 导入 JSON
+      '<div id="data-migrate-wrap" style="display:none;margin-top:14px;padding-top:12px;border-top:1px dashed #ccc;">' +
+      '<p class="auth-hint" style="margin-bottom:6px;"><i class="fas fa-sync-alt"></i> 本地账号跨设备同步:先导出 JSON,发到另一设备后再导入</p>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
+      '<button type="button" class="btn btn-primary" id="btn-export-data" style="flex:1;padding:6px 8px;font-size:13px;"><i class="fas fa-download"></i> 导出数据为文本</button>' +
+      '<button type="button" class="btn btn-primary" id="btn-import-data" style="flex:1;padding:6px 8px;font-size:13px;"><i class="fas fa-upload"></i> 从文本导入数据</button>' +
+      '</div>' +
+      '</div>' +
       '</form>' +
       '</div>';
     document.body.appendChild(modal);
@@ -478,8 +486,51 @@
       '</div>';
     document.body.appendChild(pwdModal);
 
+    // ---------- 数据迁移弹窗(导出/导入 JSON) ----------
+    var migModal = document.createElement('div');
+    migModal.id = 'mig-modal';
+    migModal.className = 'modal-overlay';
+    migModal.innerHTML =
+      '<div class="modal-box">' +
+      '<button class="modal-close" id="mig-close" aria-label="关闭">&times;</button>' +
+      '<h3 id="mig-title" style="margin:0 0 12px 0;">账号数据迁移</h3>' +
+      '<div id="mig-export-pane">' +
+      '<p class="auth-hint" style="margin-bottom:8px;"><i class="fas fa-info-circle"></i> 复制下方全部文本,通过微信/QQ/邮件等发送到另一台设备后粘贴导入。</p>' +
+      '<textarea id="mig-export-text" readonly style="width:100%;min-height:220px;max-height:300px;resize:vertical;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:monospace;font-size:12px;"></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;">' +
+      '<button type="button" class="btn btn-primary" id="mig-copy-btn" style="flex:1;"><i class="fas fa-copy"></i> 一键复制到剪贴板</button>' +
+      '<button type="button" class="btn btn-primary" id="mig-save-btn" style="flex:1;"><i class="fas fa-file-download"></i> 另存为 ee-data.json 文件</button>' +
+      '</div>' +
+      '<p class="auth-message" id="mig-export-msg"></p>' +
+      '</div>' +
+      '<div id="mig-import-pane" style="display:none;">' +
+      '<p class="auth-hint" style="margin-bottom:8px;"><i class="fas fa-info-circle"></i> 粘贴之前导出的完整 JSON 文本后点"开始导入"。相同 key 会被覆盖,请谨慎操作。</p>' +
+      '<textarea id="mig-import-text" placeholder="把导出的 JSON 粘贴到这里" style="width:100%;min-height:220px;max-height:300px;resize:vertical;padding:8px;border:1px solid #ccc;border-radius:6px;font-family:monospace;font-size:12px;"></textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:10px;">' +
+      '<button type="button" class="btn btn-primary" id="mig-import-btn" style="flex:1;"><i class="fas fa-upload"></i> 开始导入</button>' +
+      '<button type="button" class="btn btn-primary" id="mig-import-file-btn" style="flex:1;"><i class="fas fa-file-upload"></i> 从 .json 文件导入</button>' +
+      '<input type="file" id="mig-import-file" accept=".json,application/json" style="display:none;">' +
+      '</div>' +
+      '<p class="auth-message" id="mig-import-msg"></p>' +
+      '</div>' +
+      // Tab 切换:导出/导入
+      '<div style="margin-bottom:10px;display:flex;gap:8px;">' +
+      '<button type="button" class="auth-tab active" data-mig-mode="export" style="flex:1;justify-content:center;display:flex;">导出数据</button>' +
+      '<button type="button" class="auth-tab" data-mig-mode="import" style="flex:1;justify-content:center;display:flex;">导入数据</button>' +
+      '</div>' +
+      '</div>';
+    // 需要把 Tab bar 从底部搬到顶部:先把 h3/migTabBar 顺序调整一下(先用 DOM 操作插入到最前)
+    var tabBar = migModal.querySelector('[data-mig-mode]').parentNode;
+    var title = migModal.querySelector('#mig-title');
+    var migBox = migModal.querySelector('.modal-box');
+    migBox.insertBefore(tabBar, title.nextSibling);
+    document.body.appendChild(migModal);
+
     bindAuthEvents();
     bindPwdEvents();
+    bindMigEvents();
+    // buildAuthUI 完成后立刻按当前模式刷新提示,避免弹窗刚打开时显示默认 cloud 文案
+    refreshModeHint();
     renderUserArea();
   }
 
@@ -517,14 +568,132 @@
     el.className = 'auth-message ' + (ok ? 'success' : 'error');
   }
 
-  // 模式确定后更新底部提示文案
+  // 模式确定后更新底部提示文案 + 数据迁移区显隐(local 才需要手动迁移)
   function refreshModeHint() {
     var hint = document.getElementById('auth-mode-hint');
-    if (!hint) return;
-    if (mode === 'local') {
-      hint.textContent = '提示:当前为本地账号模式(后端不可达),数据保存在本机浏览器,清缓存会丢失。';
-    } else {
-      hint.textContent = '提示:用户数据云端保存,跨设备同步 · 账号在所有平台通用';
+    if (hint) {
+      if (mode === 'local') {
+        hint.textContent = '提示:当前为本地账号模式(免费域名 Cookie 受限或后端不可达),数据保存在本机浏览器,清缓存会丢失。';
+      } else {
+        hint.textContent = '提示:用户数据云端保存,跨设备同步 · 账号在所有平台通用';
+      }
+    }
+    var migWrap = document.getElementById('data-migrate-wrap');
+    if (migWrap) migWrap.style.display = (mode === 'local') ? 'block' : 'none';
+  }
+
+  // ========= 数据迁移弹窗事件绑定 + 打开/关闭 =========
+  function openDataMigrationModal(tabMode) {
+    var modal = document.getElementById('mig-modal');
+    if (!modal) { buildAuthUI(); modal = document.getElementById('mig-modal'); }
+    if (!modal) return;
+    applyMigTab(tabMode || 'export');
+    // 打开时若为导出tab,先填好导出数据
+    if ((tabMode || 'export') === 'export') fillExportTextarea();
+    modal.classList.add('show');
+  }
+  function closeDataMigrationModal() {
+    var m = document.getElementById('mig-modal'); if (m) m.classList.remove('show');
+    var em = document.getElementById('mig-export-msg'); if (em) em.textContent = '';
+    var im = document.getElementById('mig-import-msg'); if (im) im.textContent = '';
+  }
+  function applyMigTab(tabMode) {
+    var modal = document.getElementById('mig-modal'); if (!modal) return;
+    var tabs = modal.querySelectorAll('.auth-tab[data-mig-mode]');
+    tabs.forEach(function (t) {
+      if (t.dataset.migMode === tabMode) t.classList.add('active');
+      else t.classList.remove('active');
+    });
+    var ep = document.getElementById('mig-export-pane');
+    var ip = document.getElementById('mig-import-pane');
+    if (ep) ep.style.display = tabMode === 'export' ? 'block' : 'none';
+    if (ip) ip.style.display = tabMode === 'import' ? 'block' : 'none';
+  }
+  function fillExportTextarea() {
+    var ta = document.getElementById('mig-export-text'); if (!ta) return;
+    try { ta.value = exportLocalData(); } catch (e) { ta.value = '// 导出失败:' + e.message; }
+  }
+  function bindMigEvents() {
+    var modal = document.getElementById('mig-modal'); if (!modal) return;
+    var closeBtn = document.getElementById('mig-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeDataMigrationModal);
+    modal.addEventListener('click', function (e) { if (e.target === modal) closeDataMigrationModal(); });
+
+    var tabs = modal.querySelectorAll('.auth-tab[data-mig-mode]');
+    tabs.forEach(function (t) {
+      t.addEventListener('click', function () {
+        applyMigTab(t.dataset.migMode);
+        if (t.dataset.migMode === 'export') fillExportTextarea();
+      });
+    });
+
+    var copyBtn = document.getElementById('mig-copy-btn');
+    if (copyBtn) copyBtn.addEventListener('click', function () {
+      var ta = document.getElementById('mig-export-text');
+      var msg = document.getElementById('mig-export-msg');
+      if (!ta || !msg) return;
+      ta.select();
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(ta.value).then(function () {
+            showMsg(msg, '已复制 ' + ta.value.length + ' 字符到剪贴板', true);
+          }).catch(function () {
+            document.execCommand('copy');
+            showMsg(msg, '已复制', true);
+          });
+        } else {
+          document.execCommand('copy');
+          showMsg(msg, '已复制', true);
+        }
+      } catch (e) {
+        showMsg(msg, '复制失败,请手动 Ctrl+C 选中复制', false);
+      }
+    });
+
+    var saveBtn = document.getElementById('mig-save-btn');
+    if (saveBtn) saveBtn.addEventListener('click', function () {
+      var ta = document.getElementById('mig-export-text');
+      var msg = document.getElementById('mig-export-msg');
+      if (!ta || !msg) return;
+      var blob = new Blob([ta.value], { type: 'application/json;charset=utf-8' });
+      var url = URL.createObjectURL(blob);
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = 'ee-data-' + new Date().toISOString().slice(0, 10) + '.json';
+      document.body.appendChild(a); a.click();
+      document.body.removeChild(a);
+      try { URL.revokeObjectURL(url); } catch (e) {}
+      showMsg(msg, '已触发下载', true);
+    });
+
+    var importBtn = document.getElementById('mig-import-btn');
+    if (importBtn) importBtn.addEventListener('click', function () {
+      var ta = document.getElementById('mig-import-text');
+      var msg = document.getElementById('mig-import-msg');
+      if (!ta || !msg) return;
+      if (!ta.value.trim()) { showMsg(msg, '文本框为空,请先粘贴导出的 JSON', false); return; }
+      var r = importLocalData(ta.value);
+      showMsg(msg, r.message + (r.sample && r.sample.length ? ' (包含 key 例:' + r.sample.join(',') + ')' : ''), r.success);
+    });
+
+    var fileBtn = document.getElementById('mig-import-file-btn');
+    var fileInput = document.getElementById('mig-import-file');
+    if (fileBtn && fileInput) {
+      fileBtn.addEventListener('click', function () { fileInput.click(); });
+      fileInput.addEventListener('change', function () {
+        var f = fileInput.files && fileInput.files[0];
+        var msg = document.getElementById('mig-import-msg');
+        var ta = document.getElementById('mig-import-text');
+        if (!f || !msg || !ta) return;
+        var reader = new FileReader();
+        reader.onload = function () {
+          ta.value = String(reader.result || '');
+          // 自动点导入
+          if (importBtn) importBtn.click();
+        };
+        reader.onerror = function () { showMsg(msg, '读取文件失败', false); };
+        reader.readAsText(f, 'utf-8');
+      });
     }
   }
 
@@ -582,6 +751,12 @@
         }, 800);
       }
     });
+
+    // 底部 导出/导入 按钮
+    var exp = document.getElementById('btn-export-data');
+    if (exp) exp.addEventListener('click', function () { openDataMigrationModal('export'); });
+    var imp = document.getElementById('btn-import-data');
+    if (imp) imp.addEventListener('click', function () { openDataMigrationModal('import'); });
   }
 
   function bindPwdEvents() {
@@ -639,16 +814,67 @@
     if (user) {
       area.innerHTML =
         '<span class="user-greeting"><i class="fas fa-user-circle"></i> ' + escapeHtml(user) + '</span>' +
+        (mode === 'local' ? '<button class="btn-pwd" id="btn-mig" title="数据同步(跨设备导出/导入)"><i class="fas fa-sync-alt"></i></button>' : '') +
         '<button class="btn-pwd" id="btn-pwd" title="修改密码"><i class="fas fa-key"></i></button>' +
         '<button class="btn-logout" id="btn-logout" title="退出登录"><i class="fas fa-sign-out-alt"></i></button>';
       document.getElementById('btn-logout').addEventListener('click', function () { logout().then(renderUserArea); });
       var pwdBtn = document.getElementById('btn-pwd');
       if (pwdBtn) pwdBtn.addEventListener('click', openPwdModal);
+      var migBtn = document.getElementById('btn-mig');
+      if (migBtn) migBtn.addEventListener('click', openDataMigrationModal);
     } else {
       area.innerHTML =
         '<button class="btn-login" id="btn-login"><i class="fas fa-sign-in-alt"></i> 登录 / 注册</button>';
       document.getElementById('btn-login').addEventListener('click', openAuthModal);
     }
+  }
+
+  // ========= 数据导出 / 导入 (local 模式跨设备同步辅助) =========
+  // 导出:把 ee-users、ee-session、所有 ee-progress-*、ee-* 业务相关 key 打包成 JSON 字符串
+  // 用法:点击 UI 按钮后弹出 textarea,用户复制 JSON 发到微信/QQ/邮件,另一设备粘贴导入
+  function exportLocalData() {
+    var keys = [];
+    for (var i = 0; i < localStorage.length; i++) keys.push(localStorage.key(i));
+    var eeKeys = keys.filter(function (k) {
+      return k && k.indexOf('ee-') === 0;
+    });
+    var obj = { v: 1, exportedAt: new Date().toISOString(), data: {} };
+    eeKeys.forEach(function (k) {
+      try { obj.data[k] = localStorage.getItem(k); } catch (e) {}
+    });
+    return JSON.stringify(obj, null, 2);
+  }
+  // 导入:解析 JSON,逐个 key 写入 localStorage,返回导入条数/报错原因
+  // 策略:默认 merge(不覆盖已有不同值时可选 overwrite=false?为简化,直接覆盖:云端 mode 不会用这些 key,local 模式跨设备就是为了同步,用户决定导入即允许覆盖)
+  function importLocalData(jsonStr, opts) {
+    opts = opts || {};
+    var parsed;
+    try { parsed = JSON.parse(jsonStr); }
+    catch (e) { return { success: false, message: 'JSON 格式错误,无法解析' }; }
+    if (!parsed || !parsed.data || typeof parsed.data !== 'object') {
+      return { success: false, message: '文件内容缺少 data 字段,不是合法的导出包' };
+    }
+    var written = 0, skipped = 0, names = [];
+    Object.keys(parsed.data).forEach(function (k) {
+      if (k.indexOf('ee-') !== 0) { skipped++; return; } // 只写入 ee- 前缀 key,防越权
+      if (!opts.dryRun) {
+        try {
+          localStorage.setItem(k, parsed.data[k]);
+          // 如果是 ee-session,触发缓存刷新
+          if (k === 'ee-session') { cache.user = null; cache.ready = false; }
+        } catch (e) { skipped++; return; }
+      }
+      written++;
+      if (names.length < 5) names.push(k);
+    });
+    if (!opts.dryRun) {
+      try { renderUserArea(); } catch (e) {}
+      try { document.dispatchEvent(new CustomEvent('authChanged', { detail: { username: getCurrentUser() } })); } catch (e) {}
+      try { document.dispatchEvent(new CustomEvent('progressChanged')); } catch (e) {}
+    }
+    var info = '导入 ' + written + ' 条';
+    if (skipped) info += ',跳过 ' + skipped + ' 条(非 ee- 前缀或写入失败)';
+    return { success: true, message: info, written: written, skipped: skipped, sample: names };
   }
 
   // 暴露 API (保持原有同步方法名,写方法返回 Promise)
@@ -663,6 +889,9 @@
     openPwdModal: openPwdModal,
     buildAuthUI: buildAuthUI,
     getMode: function () { return mode; },
+    exportLocalData: exportLocalData,
+    importLocalData: importLocalData,
+    openDataMigrationModal: openDataMigrationModal,
     // 内部工具:等待 session 拉取完成
     __ready: function () {
       if (cache.ready) return Promise.resolve({ user: cache.user });
@@ -678,6 +907,9 @@
   document.addEventListener('DOMContentLoaded', function () {
     buildAuthUI();
     me().then(function () {
+      // mode 可能刚刚由 detectMode() 决定(local/cloud),重新应用文案到已渲染的弹窗
+      try { refreshModeHint(); } catch (e) {}
+      try { renderUserArea(); } catch (e) {}
       if (cache.readyDefer) cache.readyDefer.r({ user: cache.user });
       fireAuthChanged();
     });
