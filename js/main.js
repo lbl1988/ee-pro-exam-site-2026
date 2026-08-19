@@ -1045,7 +1045,25 @@
   }
 
   // ===== 初始化 =====
+  function cleanupCachedUserDom() {
+    // Render/Vercel 静态托管 Pre-render 可能把他人登录态/进度条快照写入返回的 HTML
+    // 在这里把用户可见的"他人 UI 残留"统一移除/重置,保证后续渲染基于真实 localStorage,不显示别人名字
+    try {
+      // 1) 登录区:清掉所有旧 user-area / user-greeting / 功能按钮,由 auth.js buildAuthUI 重建
+      var nc = document.querySelector('.navbar-container');
+      if (nc) {
+        var stale = nc.querySelectorAll('#user-area, .user-greeting, [id="btn-mig"], [id="btn-logout"], [id="btn-pwd"], #btn-login');
+        for (var i = 0; i < stale.length; i++) {
+          try { stale[i].parentNode && stale[i].parentNode.removeChild(stale[i]); } catch (e) {}
+        }
+      }
+      // 2) 首页进度区:清掉 Pre-render 的"XX用户 · 0%",让 renderProgressDashboard 基于真实登录态重建
+      var pd = document.getElementById('progress-dashboard');
+      if (pd) pd.innerHTML = '';
+    } catch (e) {}
+  }
   document.addEventListener('DOMContentLoaded', function () {
+    cleanupCachedUserDom();
     initDirectionSwitcher();
     initMobileNav();
     initHomePage();

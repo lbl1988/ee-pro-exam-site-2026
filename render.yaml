@@ -13,3 +13,20 @@ services:
       - path: /*
         name: X-Frame-Options
         value: ALLOWALL
+      # 禁用静态托管的 Pre-render / HTML 缓存,防止他人登录态快照被写到 HTML 返回
+      - path: /
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate, max-age=0
+      - path: /*.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate, max-age=0
+      # 静态资源可以短期缓存
+      - path: /css/*
+        name: Cache-Control
+        value: public, max-age=600
+      - path: /js/*
+        name: Cache-Control
+        value: public, max-age=300
+      - path: /data/*
+        name: Cache-Control
+        value: public, max-age=600

@@ -408,6 +408,15 @@
     var navContainer = document.querySelector('.navbar-container');
     if (!navContainer) return;
 
+    // 防御性清理:静态托管(Render/Vercel Pre-render)可能返回了他人登录态缓存的 user-area 快照
+    // 强制把旧 user-area 连根拔起,避免出现双 #user-area 导致 getElementById / 事件绑定错乱
+    try {
+      var olds = navContainer.querySelectorAll('#user-area, .user-greeting, [id="btn-mig"], [id="btn-logout"], [id="btn-pwd"]');
+      for (var i = 0; i < olds.length; i++) {
+        try { olds[i].parentNode && olds[i].parentNode.removeChild(olds[i]); } catch (e) {}
+      }
+    } catch (e) {}
+
     var userArea = document.createElement('div');
     userArea.id = 'user-area';
     userArea.style.cssText = 'display:flex;align-items:center;gap:10px;color:#fff;';
