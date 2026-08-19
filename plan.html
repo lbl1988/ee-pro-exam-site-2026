@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="注册电气工程师基础考试2026备考规划：4-6个月三阶段复习方案，日均2小时高效备考，在职考生通关计划。">
+  <title>备考规划 - 注册电气工程师基础考试2026</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    .plan-hero {
+      background: linear-gradient(135deg, #d35400, #e67e22);
+      color: #fff;
+      padding: 50px 20px;
+      border-radius: 12px;
+      margin-bottom: 30px;
+    }
+    .plan-hero-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+    .plan-hero h1 { font-size: 32px; margin-bottom: 10px; }
+    .plan-hero p { opacity: 0.92; font-size: 16px; }
+    .plan-hero-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+      margin-top: 28px;
+      text-align: center;
+    }
+    .plan-stat-box {
+      background: rgba(255,255,255,0.12);
+      border-radius: 10px;
+      padding: 18px 10px;
+    }
+    .plan-stat-num { font-size: 30px; font-weight: 700; }
+    .plan-stat-label { font-size: 13px; opacity: 0.9; margin-top: 4px; }
+
+    .mistakes-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 14px;
+    }
+    .mistake-card {
+      background: #fdf2f0;
+      border-radius: 8px;
+      padding: 16px;
+      color: #78281f;
+      font-size: 14px;
+      line-height: 1.65;
+    }
+    .mistake-card b { color: #c0392b; }
+
+    .phase-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 24px 26px;
+      margin-bottom: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+      border-left: 6px solid #ccc;
+      position: relative;
+    }
+    .phase-card.p1 { border-left-color: #27ae60; }
+    .phase-card.p2 { border-left-color: #2980b9; }
+    .phase-card.p3 { border-left-color: #e74c3c; }
+    .phase-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 18px;
+    }
+    .phase-title {
+      font-size: 20px;
+      color: #2c3e50;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .phase-title i { font-size: 22px; }
+    .phase-duration {
+      font-size: 13px;
+      padding: 6px 14px;
+      border-radius: 16px;
+      color: #fff;
+      font-weight: 500;
+    }
+    .phase-card.p1 .phase-duration { background: #27ae60; }
+    .phase-card.p2 .phase-duration { background: #2980b9; }
+    .phase-card.p3 .phase-duration { background: #e74c3c; }
+    .phase-tag {
+      font-size: 12px;
+      padding: 4px 10px;
+      border-radius: 10px;
+      background: #eaf2f8;
+      color: #1a5276;
+    }
+    .phase-body {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 18px;
+    }
+    .phase-col h4 {
+      font-size: 14px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .phase-col.p1 h4 { color: #27ae60; }
+    .phase-col.p2 h4 { color: #2980b9; }
+    .phase-col.p3 h4 { color: #e74c3c; }
+    .phase-col ul {
+      padding-left: 20px;
+      color: #566573;
+      font-size: 14px;
+      line-height: 1.85;
+    }
+    .phase-col ul li { margin-bottom: 6px; }
+    .daily-rhythm {
+      background: #fdf9e7;
+      border-radius: 8px;
+      padding: 14px 16px;
+      color: #7e5109;
+      line-height: 1.7;
+      font-size: 14px;
+    }
+
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .tool-card {
+      background: #fff;
+      border-radius: 10px;
+      padding: 18px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+      border: 1px solid #ecf0f1;
+    }
+    .tool-card h4 {
+      font-size: 15px;
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .tool-card p {
+      font-size: 13px;
+      color: #566573;
+      line-height: 1.65;
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <div class="navbar-container">
+      <a href="index.html" class="navbar-brand">
+        <i class="fas fa-bolt"></i>
+        注电2026复习平台
+      </a>
+      <button class="navbar-toggle"><i class="fas fa-bars"></i></button>
+      <ul class="navbar-nav">
+        <li><a href="index.html">首页</a></li>
+        <li><a href="basic.html">基础知识</a></li>
+        <li><a href="hot-points.html">高频考点</a></li>
+        <li><a href="videos.html">视频直播</a></li>
+        <li><a href="my-notes.html">学习笔记</a></li>
+        <li><a href="guide.html">报考指南</a></li>
+        <li><a href="plan.html" class="active">备考规划</a></li>
+        <li><a href="share.html">学友分享</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <div class="direction-switcher">
+    <div class="direction-switcher-container">
+      <span class="direction-label">选择考试方向:</span>
+      <div class="direction-tabs">
+        <button class="direction-tab" data-direction="pd"><i class="fas fa-plug"></i> 供配电</button>
+        <button class="direction-tab" data-direction="pt"><i class="fas fa-bolt"></i> 发输变电</button>
+      </div>
+    </div>
+  </div>
+
+  <main class="main-content">
+    <div id="progress-dashboard"></div>
+
+    <div class="plan-hero">
+      <span class="plan-hero-badge"><i class="fas fa-calendar-check"></i> 4~6个月通关方案</span>
+      <h1>注册电气工程师基础考试 · 备考规划</h1>
+      <p>在职考生专属 · 每天2小时 · 三阶段稳步推进 · 零基础友好 · 拒绝盲目刷题</p>
+      <div class="plan-hero-stats">
+        <div class="plan-stat-box">
+          <div class="plan-stat-num">4~6</div>
+          <div class="plan-stat-label">个月备考周期</div>
+        </div>
+        <div class="plan-stat-box">
+          <div class="plan-stat-num">2h</div>
+          <div class="plan-stat-label">日均学习时长</div>
+        </div>
+        <div class="plan-stat-box">
+          <div class="plan-stat-num">3</div>
+          <div class="plan-stat-label">阶段划分</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 六大误区 -->
+    <div class="section-card" style="border-left: 6px solid #e74c3c; margin-bottom: 28px;">
+      <h2 class="knowledge-section-title" style="margin-bottom:18px;"><i class="fas fa-exclamation-triangle" style="color:#e74c3c;"></i> ⚠️ 六大备考误区（一定要避开）</h2>
+      <div class="mistakes-grid">
+        <div class="mistake-card"><b>❌ 盲目啃厚教材</b>：抱着天大/注电教材从头到尾通读，内容太多抓不住重点，耗时数月效率极低。先看视频建立框架，再回教材补细节。</div>
+        <div class="mistake-card"><b>❌ 放弃难科目</b>：觉得高数/力学难就直接放弃，其实只要拿基础分，每科都贡献几题，累计就能过线。</div>
+        <div class="mistake-card"><b>❌ 只看视频不做题</b>：视频刷了一大堆，以为自己会了，一做题全错。必须每看完一科立即做对应章节习题巩固。</div>
+        <div class="mistake-card"><b>❌ 缺乏真题模拟</b>：平时正确率看起来不错，考场时间失控，180题根本做不完，涂卡还涂错行。</div>
+        <div class="mistake-card"><b>❌ 碎片时间浪费</b>：通勤、午休刷手机，这些时间完全可以听精讲音频、背公式，积少成多。</div>
+        <div class="mistake-card"><b>❌ 忽视下午专业基础</b>：下午60题但每题2分，总分120分，占半壁江山！专业基础性价比极高，千万不能轻视。</div>
+      </div>
+    </div>
+
+    <!-- 第一阶段 -->
+    <div class="phase-card p1">
+      <div class="phase-header">
+        <div class="phase-title"><i class="fas fa-seedling" style="color:#27ae60;"></i> 第一阶段 · 基础夯实期</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="phase-duration"><i class="fas fa-clock"></i> 第 1~2 个月</span>
+          <span class="phase-tag">阶段 1 / 3</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-col p1">
+          <h4><i class="fas fa-bullseye"></i> 阶段目标</h4>
+          <ul>
+            <li>完整过一遍<b>公共基础 11 科</b> + <b>专业基础 4 科</b>视频课程</li>
+            <li>建立知识框架，了解每门科目讲什么，核心概念基本理解</li>
+            <li>每科看完视频立即做对应章节基础题，正确率 ≥ 50% 即可进入下一科</li>
+            <li>对完全陌生的科目（如理论/材料力学）不要死磕，先掌握典型例题</li>
+          </ul>
+        </div>
+        <div class="phase-col p1">
+          <h4><i class="fas fa-crosshairs"></i> 重点科目安排</h4>
+          <ul>
+            <li><b>高等数学（24题）</b>：分值最大，花 1.5~2 周认真过，微积分/线性代数/概率</li>
+            <li><b>电路+模电+数电（下午30+题）</b>：占专业基础一半，跟工控圈或大熊系统学习</li>
+            <li><b>物理、化学、理论/材料力学</b>：各 1~2 周，拿基础分，难点可选择性跳过</li>
+            <li><b>工程经济、法规、信号、计算机</b>：属于送分科目，考前 2~3 周突击即可</li>
+          </ul>
+        </div>
+        <div class="phase-col p1">
+          <h4><i class="fas fa-clock"></i> 每日节奏</h4>
+          <div class="daily-rhythm">
+            🌅 <b>通勤路上 (30min)</b>：听前一天学过的科目音频，强化记忆<br>
+            🌙 <b>晚上 (1.5~2h)</b>：1 小时看视频课程 + 30~60 分钟章节练习<br>
+            📱 <b>碎片时间</b>：用手机刷题库 APP（如某注电题库），每题 1 分钟快速过<br>
+            📅 <b>周末 (3~4h)</b>：回顾本周内容，整理错题，补进度较慢的科目
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 第二阶段 -->
+    <div class="phase-card p2">
+      <div class="phase-header">
+        <div class="phase-title"><i class="fas fa-rocket" style="color:#2980b9;"></i> 第二阶段 · 专项突破期</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="phase-duration"><i class="fas fa-clock"></i> 第 3~4 个月</span>
+          <span class="phase-tag">阶段 2 / 3</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-col p2">
+          <h4><i class="fas fa-bullseye"></i> 阶段目标</h4>
+          <ul>
+            <li>按<b>真题考点</b>分专题攻克，把高频考点真正学透</li>
+            <li>做完近 <b>10 年真题</b>，搞懂每一道题背后的原理</li>
+            <li>整理<b>错题本</b>，标记错误原因：不会/粗心/看错/时间不够</li>
+            <li>下午专业基础正确率突破 70%，这是通过考试的关键</li>
+          </ul>
+        </div>
+        <div class="phase-col p2">
+          <h4><i class="fas fa-crosshairs"></i> 重点突破方向</h4>
+          <ul>
+            <li><b>高数+电路+电气工程基础</b>：这三科学透能拿接近 90 分，是绝对核心</li>
+            <li><b>下午专业计算题</b>：三相功率、变压器、电机、短路电流必须拿下</li>
+            <li><b>性价比学科</b>：工程经济/法规/信号/计算机 30 多分，全部拿满</li>
+            <li><b>薄弱科目回炉</b>：对第一阶段理解不到位的章节，看第二个老师的讲解换角度理解</li>
+          </ul>
+        </div>
+        <div class="phase-col p2">
+          <h4><i class="fas fa-clock"></i> 每日节奏</h4>
+          <div class="daily-rhythm">
+            📚 <b>上午/白天碎片 (30min)</b>：错题本 + 公式卡反复过<br>
+            🌙 <b>晚上 (2.5h)</b>：1 小时专题突破（真题 + 讲解）+ 1 小时真题演练 + 30 分钟整理错题<br>
+            🗂️ <b>错题本维护</b>：每道错题标注「知识点 / 错因 / 同类题定位」，定期复盘<br>
+            📅 <b>周末</b>：做一套完整真题（严格计时 4+4 小时），培养时间感
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 第三阶段 -->
+    <div class="phase-card p3">
+      <div class="phase-header">
+        <div class="phase-title"><i class="fas fa-flag-checkered" style="color:#e74c3c;"></i> 第三阶段 · 冲刺模考期</div>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <span class="phase-duration"><i class="fas fa-clock"></i> 考前最后 1 个月</span>
+          <span class="phase-tag">阶段 3 / 3</span>
+        </div>
+      </div>
+      <div class="phase-body">
+        <div class="phase-col p3">
+          <h4><i class="fas fa-bullseye"></i> 阶段目标</h4>
+          <ul>
+            <li>至少<b>3 次全真模拟考试</b>（严格 4 小时上下午 + 涂卡）</li>
+            <li>把<b>真题错题本</b>彻底过完 2 遍，同类题不再错</li>
+            <li>调整生物钟，适应早上 8~12 点、下午 2~6 点高强度用脑</li>
+            <li>稳定心态，确保<b>稳定发挥</b>，会的题全部拿下就是通关</li>
+          </ul>
+        </div>
+        <div class="phase-col p3">
+          <h4><i class="fas fa-crosshairs"></i> 冲刺提分重点</h4>
+          <ul>
+            <li><b>送分科目突击</b>：工程经济、法规、计算机、信号，确保这些科正确率 ≥ 85%</li>
+            <li><b>公式速记手册</b>：整理 A4 一页高频公式，每天睡前 + 起床过一遍</li>
+            <li><b>计算器操作熟练度</b>：卡西欧 fx-991CN X 的矩阵、复数、方程、积分功能必须熟练</li>
+            <li><b>真题套卷再刷</b>：近 5 年真题二刷甚至三刷，正确率稳定在 60%+ 基本稳过</li>
+          </ul>
+        </div>
+        <div class="phase-col p3">
+          <h4><i class="fas fa-clock"></i> 每日节奏</h4>
+          <div class="daily-rhythm">
+            ⏰ <b>严格按照考试时段学习</b>：上午段 8:00-12:00 做模拟/看错题，下午段 14:00-18:00 专攻专业基础<br>
+            ✅ <b>答题策略训练</b>：先做有把握的题，不会的先跳过，预留 15 分钟涂卡检查<br>
+            🧠 <b>错题复盘（30min）</b>：每天固定时间复盘当天错题<br>
+            😴 <b>考前一周</b>：不再做新题，回归错题 + 公式 + 心态调整，保证睡眠
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 工具推荐 -->
+    <div class="section-card" style="border-left: 6px solid #f39c12; margin-top: 30px;">
+      <h2 class="knowledge-section-title" style="margin-bottom: 6px;"><i class="fas fa-toolbox" style="color:#f39c12;"></i> 🛠️ 高效备考工具推荐</h2>
+      <p style="color:#566573; font-size:14px; margin-bottom: 10px;">工欲善其事，必先利其器，合适的工具能大幅提升备考效率：</p>
+      <div class="tools-grid">
+        <div class="tool-card">
+          <h4 style="color:#d35400;"><i class="fas fa-book"></i> 教材资料</h4>
+          <p>① 官方教材（天津大学出版社《注册电气工程师执业资格考试基础考试复习教程》）<br>
+          ② 历年真题集（至少近 10 年，带详细解析版）<br>
+          ③ 姜小白/工控圈配套讲义（与视频对应）</p>
+        </div>
+        <div class="tool-card">
+          <h4 style="color:#2980b9;"><i class="fas fa-calculator"></i> 考试计算器</h4>
+          <p>卡西欧 fx-991CN X（考试允许机型，支持矩阵运算、复数计算、微积分、方程求解、统计分布）。<b>提前 3 个月熟悉每一个按键功能！</b>考场计算器不熟练 = 丢分。</p>
+        </div>
+        <div class="tool-card">
+          <h4 style="color:#27ae60;"><i class="fas fa-mobile-alt"></i> 刷题 APP</h4>
+          <p>某注电题库、电气工程师题库等手机端 APP（自行搜索）。<br>
+          通勤、排队、午休等碎片时间刷选择题，每道题 1 分钟快速判断，累计能刷几千道题。</p>
+        </div>
+        <div class="tool-card">
+          <h4 style="color:#8e44ad;"><i class="fas fa-sticky-note"></i> 笔记/错题工具</h4>
+          <p>① 本平台「学习笔记」功能：按科目分类整理知识总结<br>
+          ② 错题本（纸质/电子均可）：重点记「为什么错、同类题在哪、正确思路」<br>
+          ③ A4 公式卡：打印或手写一页高频公式，随身携带</p>
+        </div>
+        <div class="tool-card">
+          <h4 style="color:#e74c3c;"><i class="fas fa-stopwatch"></i> 模考工具</h4>
+          <p>① 机械手表 / 计时器：严格控制模考时间<br>
+          ② 标准答题卡 + 2B 铅笔：练习填涂速度，避免考场上手忙脚乱<br>
+          ③ 计算器备用电池：考试当天多带一块纽扣电池备用</p>
+        </div>
+        <div class="tool-card">
+          <h4 style="color:#16a085;"><i class="fas fa-users"></i> 学习社群</h4>
+          <p>加入 1~2 个高质量学习群（本平台「学友分享」板块 + QQ/微信群）。<br>
+          群友提问 / 分享资料 / 督促学习，比独自备考更有动力。遇到不懂的问题发群里，经常有大神秒回。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 快速提分策略 -->
+    <div class="section-card" style="border-left: 6px solid #16a085; margin-top: 28px;">
+      <h2 class="knowledge-section-title" style="margin-bottom:10px;"><i class="fas fa-gem" style="color:#16a085;"></i> 💎 基础考试快速提分策略（针对时间紧迫考生）</h2>
+      <div style="color:#566573; line-height:1.85; font-size:14px;">
+        <p style="margin-bottom:10px;">如果你距离考试只剩 <b>2~3 个月</b>，或者时间实在不够，建议采用「<b>保 132 争高分</b>」的策略，先抓性价比最高的部分：</p>
+        <ul style="padding-left:22px;">
+          <li><b>第一梯队（必拿分，约 120+ 分）</b>：高数 24 分、电气工程基础+电路+模电数电 约 60+ 分、工程经济 6 分、法律法规 6 分、信号信息 6 分、计算机 10 分 = 合计 112~120 分</li>
+          <li><b>第二梯队（尽量拿，约 40 分）</b>：物理 12 分 + 化学 12 分 + 流体力学 12 分，这三科相对独立，每科学高频公式即可</li>
+          <li><b>第三梯队（时间不够可战略性选择）</b>：理论力学 13 分 + 材料力学 13 分，难度较大时间成本高，可只学最基础的典型例题，其他蒙同一选项（约 1/4 正确率）</li>
+        </ul>
+      </div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <p>注册电气工程师基础考试2026复习平台 · 供配电 & 发输变电</p>
+    <p>视频资源来源于 <a href="https://www.bilibili.com" target="_blank" rel="noopener">哔哩哔哩</a> · 仅供学习交流使用</p>
+  </footer>
+
+  <script src="data/basic-knowledge.js"></script>
+  <script src="data/hot-points.js"></script>
+  <script src="data/videos.js?v=4"></script>
+  <script src="js/auth.js?v=4"></script>
+  <script src="js/progress.js?v=4"></script>
+  <script src="js/main.js?v=4"></script>
+</body>
+</html>

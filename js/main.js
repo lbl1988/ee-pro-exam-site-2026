@@ -126,6 +126,8 @@
       { icon: 'fas fa-fire', title: '高频考点', desc: '精选历年高频考点与公式速记,标注考频星级,帮助高效复习,直击考试重点。', link: 'hot-points.html', btnText: '查看高频考点' },
       { icon: 'fas fa-video', title: '视频直播', desc: 'B站视频课程集合:姜小白公共基础精讲、工控圈专业精讲、大熊冲刺课、电教中心全18讲、历年真题讲解。', link: 'videos.html', btnText: '观看视频' },
       { icon: 'fas fa-pencil-alt', title: '学习笔记', desc: '整理各科目学习笔记与知识总结,登录后可自定义笔记,方便随时查阅复习。', link: 'my-notes.html', btnText: '查看笔记' },
+      { icon: 'fas fa-clipboard-list', title: '报考指南', desc: '注册电气工程师基础考试报考全流程:考试介绍、报名条件、科目分值、时间节点、成绩管理一次看懂。', link: 'guide.html', btnText: '查看报考指南' },
+      { icon: 'fas fa-calendar-check', title: '备考规划', desc: '4~6个月三阶段通关方案,在职考生每日2小时高效复习计划,六大误区规避+工具推荐。', link: 'plan.html', btnText: '查看备考规划' },
       { icon: 'fas fa-users', title: '学友分享', desc: '学友备考经验分享、资料交流、问答互助,共同进步,一起通关。', link: 'share.html', btnText: '查看分享' }
     ];
 
